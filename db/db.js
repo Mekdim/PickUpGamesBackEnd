@@ -1,5 +1,6 @@
 const config = require("./config");
 const { Pool } = require("pg");
+const { ResultsNotFound, DatabaseError } = require("../error/Error");
 
 class db {
   constructor(options) {
@@ -9,7 +10,7 @@ class db {
   async addSession(values, fields) {
     const client = await this.pool.connect();
     const sessionQuery = {
-      text: "INSERT INTO Sessions (pitch_id, start_time, end_time, duration, number_of_players,price) values($1, $2, $3, $4, $5, $6) RETURNING id",
+      text: "INSERT INTO Sessions (pitch_id, name, date, start_time, end_time, duration, number_of_players) values($1, $2, $3, $4, $5, $6, $7) RETURNING id",
       values: [...values],
       rowMode: "array",
     };
@@ -28,13 +29,13 @@ class db {
 
       return [result1, result2.rows];
     } catch (error) {
-      console.log("Error ", error);
+      console.log("Error occurred when attempting to addSession ", error);
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
         console.log("A rollback error occurred:", rollbackError);
       }
-      throw error;
+      throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
     }
@@ -61,13 +62,13 @@ class db {
 
       return [result1, result2.rows];
     } catch (error) {
-      console.log("Error ", error);
+      console.log("Error occurred when attempting to joinSession ", error);
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
         console.log("A rollback error occurred:", rollbackError);
       }
-      throw error;
+      throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
     }
@@ -79,15 +80,21 @@ class db {
       text: "SELECT * FROM Sessions WHERE pitch_id = $1",
       values: [sessionId],
     };
-
     const client = await this.pool.connect();
-
     try {
+
       const results = await client.query(query);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied pitchId");
+      }
       return results.rows;
     } catch (error) {
-      console.log("unable to query Sessions ", error);
-      throw error;
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
     }

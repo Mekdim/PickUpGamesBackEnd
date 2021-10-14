@@ -24,8 +24,8 @@ CREATE TABLE   Hosts(
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
-/*pitch type Football field for now
-  we can also use some other libraries for lat/long location*/
+--/*pitch type Football field for now
+--  we can also use some other libraries for lat/long location*/
 CREATE TABLE   Pitch(
     id SERIAL PRIMARY KEY,
     host_id Integer REFERENCES Hosts (id),
@@ -41,28 +41,41 @@ CREATE TABLE   Pitch(
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
-/* Availability - Fully booked, etc */
+CREATE TYPE DaysOfWeek AS ENUM ('monday','tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
+
+CREATE TABLE OpeningHours (
+    id SERIAL PRIMARY KEY,
+    pitch_id Integer REFERENCES Pitch (id),
+    dayOfWeek DaysOfWeek,
+    start_time TIME,
+    end_time TIME,
+    created_at TIMESTAMPTZ DEFAULT current_timestamp,
+    updated_at TIMESTAMPTZ DEFAULT current_timestamp
+);
+
+--/* Availability - Fully booked, etc */
 CREATE TABLE  Sessions (
     id SERIAL PRIMARY KEY,
     pitch_id Integer REFERENCES Pitch (id),
-    start_time  TIMESTAMPTZ , 
-    end_time TIMESTAMPTZ ,
+    name VARCHAR(100),
+    date DATE,
+    start_time  TIME ,
+    end_time TIME ,
     duration Numeric,
     number_of_players INTEGER,
-    price NUMERIC,
     Availability VARCHAR(50),
     reservation_status VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
-CREATE TABLE   session_members(
+CREATE TABLE session_members(
     id SERIAL PRIMARY KEY,
     session_id Integer REFERENCES Sessions (id),
     player_id Integer REFERENCES Players (id),
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
-/* type can be person image or pitch image and image id is players id or pitch id*/
+--/* type can be person image or pitch image and image id is players id or pitch id*/
 CREATE TABLE   Pictures(
     id SERIAL PRIMARY KEY,
     image_url VARCHAR(250),
