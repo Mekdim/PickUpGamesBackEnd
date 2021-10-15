@@ -33,6 +33,37 @@ class db {
       client.release();
     }
   }
+
+  // Add profile picture for player of id x
+  async addProfilePicture(values) {
+    const client = await this.pool.connect();
+    const addProfilePictureQuery = {
+      text: 'INSERT INTO pictures (image_url, image_type, image_id ) values($1, $2, $3) RETURNING id',
+      values: [...values],
+      rowMode: "array",
+    };
+    
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(addProfilePictureQuery);
+      console.log(result1.rows[0].id);
+      await client.query("COMMIT");
+
+      return [result1];
+    } catch (error) {
+      console.log("Error occurred when attempting to addProfilePicture ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  // 
   async getProfile(uid) {
     const query = {
       text: "SELECT * FROM Players WHERE uid = $1",
@@ -51,7 +82,32 @@ class db {
       if (error.name === "ResultsNotFound") {
         throw error;
       }
-      console.log("Unable to query Sessions ", error);
+      console.log("Unable to query user profile details ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+  //Mark: get image for profile pictures image id here is the id of the player 
+  async getProfilePicture(id) {
+    const query = {
+      text: "SELECT * FROM Players INNER JOIN pictures on Players.id = Pictures.image_id WHERE image_id = $1 AND image_type= $2 ORDER BY Pictures.created_at DESC",
+      values: [id, "PROFILE_IMAGE"],
+    };
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied userId");
+      }
+      return results.rows;
+    } catch (error) {
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query User profile picture ", error);
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
@@ -84,6 +140,7 @@ class db {
       client.release();
     }
   }
+
 
   async addSession(values, fields) {
     const client = await this.pool.connect();

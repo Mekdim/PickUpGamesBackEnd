@@ -28,6 +28,23 @@ router.post('/addProfile', async function(req, res, next) {
       next(err)
    }
 });
+
+router.post('/addProfilePicture', async function(req, res, next) {
+  // Mark: validate if the req.body fields are not nil from the request - TODO
+  let val1 = [
+   req.body.image_url,
+   "PROFILE_IMAGE",
+   req.body.image_id
+ ];
+  try{
+      let results = await database.addProfilePicture(val1);
+      res.status(201).json({
+        status:"success"
+      })
+  }catch(err){
+     next(err)
+  }
+});
 // profilepicture, email and password should be changed separately
 router.put('/updateProfile', async function(req, res, next) {
   // Mark: validate if the req.body fields are not nil from the request - TODO
@@ -45,6 +62,15 @@ router.put('/updateProfile', async function(req, res, next) {
       })
   }catch(err){
      next(err)
+  }
+});
+
+router.get('/getProfilePicture/:id', async function(req, res, next) {
+  try{
+      const results = await database.getProfilePicture(req.params.id);
+      res.status(201).json(results);
+  }catch(err){
+    next(err);
   }
 });
 // MARK: not very great way of doing it but let it do. Authenticate maybe using jwt etc
