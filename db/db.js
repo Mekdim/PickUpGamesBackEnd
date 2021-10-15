@@ -6,6 +6,84 @@ class db {
   constructor(options) {
     this.pool = new Pool(options);
   }
+  async addProfile(values) {
+    const client = await this.pool.connect();
+    const addProfileQuery = {
+      text: 'INSERT INTO players (first_name, last_name, email, uid, phone_number) values($1, $2, $3, $4, $5) RETURNING id',
+      values: [...values],
+      rowMode: "array",
+    };
+    
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(addProfileQuery);
+      console.log(result1.rows[0].id);
+      await client.query("COMMIT");
+
+      return [result1];
+    } catch (error) {
+      console.log("Error occurred when attempting to addProfile ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+  async getProfile(uid) {
+    const query = {
+      text: "SELECT * FROM Players WHERE uid = $1",
+      values: [uid],
+    };
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied userId");
+      }
+      return results.rows;
+    } catch (error) {
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+  async updateProfile(val) {
+    const client = await this.pool.connect();
+    const upDateProfile = {
+      text: "UPDATE players set first_name = $1, last_name= $2, address= $3 where uid=$4",
+      values: [...val],
+      rowMode: "array",
+    };
+   
+
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(upDateProfile);
+      await client.query("COMMIT");
+
+      return [result1];
+    } catch (error) {
+      console.log("Error occurred when attempting to Add profile ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
 
   async addSession(values, fields) {
     const client = await this.pool.connect();
