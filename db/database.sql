@@ -58,7 +58,7 @@ CREATE TABLE  Sessions (
     id SERIAL PRIMARY KEY,
     pitch_id Integer REFERENCES Pitch (id),
     name VARCHAR(100),
-    date DATE,
+    date TIMESTAMPTZ,
     start_time  TIME ,
     end_time TIME ,
     duration Numeric,

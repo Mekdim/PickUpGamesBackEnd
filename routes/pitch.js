@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const database = require("../db/db");
+const {getTime, getDate} = require("../util/time");
 
 router.post("/addSession", async function (req, res, next) {
   try {
@@ -8,15 +9,15 @@ router.post("/addSession", async function (req, res, next) {
     let val1 = [
       req.body.pitch_id,
       req.body.name,
-      req.body.date,
-      req.body.start_time,
-      req.body.end_time,
+      getDate(req.body.date),
+      getTime(req.body.start_time),
+      getTime(req.body.end_time),
       req.body.duration,
       req.body.number_of_players
     ];
     let val2 = [req.body.player_id];
 
-    console.info(val1);
+    console.log(" Date  ",new Date(req.body.date));
     let results = await database.addSession(val1, val2);
 
     console.info(results);
@@ -43,12 +44,34 @@ router.put("/joinSession", async function (req, res, next) {
   }
 });
 
-router.get("/sessions/:pitch_id", async function (req, res, next) {
-  console.log(req.params.pitch_id);
+router.get("/:pitchId/:date/sessions", async function (req, res, next) {
+  console.log(req.params.pitchId);
 
   try {
-    const results = await database.findSession(req.params.pitch_id);
-    res.status(201).json(results);
+    const results = await database.findSessionByPitchIdAndDate(req.params.pitchId, new Date(req.params.date));
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/sessions/:sessionId", async function (req, res, next) {
+  console.log(req.params.sessionId);
+
+  try {
+    const results = await database.findSessionBySessionId(req.params.sessionId);
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:pitchId/sessions", async function (req, res, next) {
+  console.log(req.params.pitchId);
+
+  try {
+    const results = await database.findSessionByPitchId(req.params.pitchId);
+    res.status(200).json(results);
   } catch (err) {
     next(err);
   }

@@ -158,7 +158,7 @@ class db {
     try {
       client.query("BEGIN");
       const result1 = await client.query(sessionQuery);
-      sessionMembersQuery.values.push(result1.rows[0].id);
+      sessionMembersQuery.values.push(result1.rows[0][0]);
       const result2 = await client.query(sessionMembersQuery);
       await client.query("COMMIT");
 
@@ -209,22 +209,80 @@ class db {
     }
   }
 
-  async findSession(sessionId, date = new Date()) {
-    //TODO add date to the query values too
-    const query = {
+  async findSessionByPitchId(pitchId) {
+    const querySessions = {
       text: "SELECT * FROM Sessions WHERE pitch_id = $1",
+      values: [pitchId],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied pitchId");
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async findSessionBySessionId(sessionId) {
+    const querySessions = {
+      text: "SELECT * FROM Sessions WHERE id = $1",
+      values: [sessionId],
+    };
+
+    const querySessionMembers = {
+      text: "SELECT player_id FROM session_members WHERE session_id = $1",
       values: [sessionId],
     };
     const client = await this.pool.connect();
     try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied pitchId");
+      }
 
+      const sessionMembers = await client.query(querySessionMembers);
+      let values = results.rows[0];
+      values.players = sessionMembers.rows;
+      return values;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async findSessionByPitchIdAndDate(sessionId, date = new Date()) {
+    let tomorrow = new Date(date);
+    tomorrow.setDate(date.getDate() + 1);
+    const query = {
+      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND date between $2 and $3",
+      values: [
+        sessionId,
+        date.toLocaleDateString(),
+        tomorrow.toLocaleDateString(),
+      ],
+    };
+    const client = await this.pool.connect();
+    try {
       const results = await client.query(query);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied pitchId");
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
