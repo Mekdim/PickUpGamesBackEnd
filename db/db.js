@@ -9,7 +9,7 @@ class db {
   async addProfile(values) {
     const client = await this.pool.connect();
     const addProfileQuery = {
-      text: 'INSERT INTO players (first_name, last_name, email, uid, phone_number) values($1, $2, $3, $4, $5) RETURNING id',
+      text: 'INSERT INTO players (first_name, last_name, email, uid, phone_number) values($1, $2, $3, $4, $5) RETURNING  id',
       values: [...values],
       rowMode: "array",
     };
@@ -17,10 +17,10 @@ class db {
     try {
       client.query("BEGIN");
       const result1 = await client.query(addProfileQuery);
-      console.log(result1.rows[0].id);
+      console.log(result1.rows[0][0]);
       await client.query("COMMIT");
 
-      return [result1];
+      return result1.rows[0][0];
     } catch (error) {
       console.log("Error occurred when attempting to addProfile ", error);
       try {

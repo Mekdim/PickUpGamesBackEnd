@@ -20,10 +20,11 @@ router.post('/addProfile', async function(req, res, next) {
     req.body.phone_number
   ];
    try{
-       let results = await database.addProfile(val1);
+     // id is returned here
+       let result = await database.addProfile(val1);
        res.status(201).json({
-         status:"success"
-       })
+        id: result
+      })
    }catch(err){
       next(err)
    }
