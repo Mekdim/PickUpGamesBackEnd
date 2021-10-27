@@ -76,5 +76,42 @@ router.get("/:pitchId/sessions", async function (req, res, next) {
     next(err);
   }
 });
+// show pitches - Address and description
+router.get("/pitches", async function (req, res, next) {
+  try {
+    const results = await database.findPitches();
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+  
+});
+
+// show pitches - instead of pitch id, it will be location in the future - like Bole
+// date will also be start and end date instead of day of week 
+router.get("/pitches/:pitchId/:dayofweek", async function (req, res, next) {
+  console.log(req.params.pitchId);
+  console.log(req.params.dayofweek);
+
+  try {
+    const results = await database.findPitchByDayOfWeek(req.params.pitchId,req.params.dayofweek);
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+// show pitches - for the day of the week when specific location isnt supplied 
+// date might also be start and end date in the future maybe
+router.get("/pitches/:dayofweek", async function (req, res, next) {
+  console.log(req.params.dayofweek);
+
+  try {
+    const results = await database.findPitchesByDayOfWeek(req.params.dayofweek);
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 module.exports = router;
