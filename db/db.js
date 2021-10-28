@@ -292,6 +292,89 @@ class db {
       client.release();
     }
   }
+
+// find all pitches with address and description and id 
+async findPitches() {
+  const querySessions = {
+    text: "SELECT * FROM pitch ",
+  };
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(querySessions);
+    if (results.rows.length === 0) {
+      // if no pitch is in the database it means there are no pitches to show
+      console.log("no pitches to show")
+    }
+    return results.rows;
+  } catch (error) {
+    if (error.name === "ResultsNotFound") {
+      throw error;
+    }
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+}
+
+// find pitch that is available the day of the week
+async findPitchByDayOfWeek(pitchId, dayofweek) {
+  const query = {
+    text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
+    values: [
+      pitchId,
+      dayofweek,
+      "PITCH_IMAGE"
+    ],
+  };
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(query);
+    console.log(results)
+    if (results.rows.length === 0) {
+      // dont throw. just means the pitch is not open that day of week
+    }
+    return results.rows;
+  } catch (error) {
+    if (error.name === "ResultsNotFound") {
+      throw error;
+    }
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+}
+
+ // find pitches 
+async findPitchesByDayOfWeek(dayofweek) {
+  const query = {
+    text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
+    values: [
+      dayofweek,
+      "PITCH_IMAGE"
+    ],
+  };
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(query);
+    console.log(results)
+    if (results.rows.length === 0) {
+      // it means it is just empty - no open pitches were found for that day of the week
+    }
+    return results.rows;
+  } catch (error) {
+    if (error.name === "ResultsNotFound") {
+      throw error;
+    }
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+}
+
+
 }
 
 const database = new db(config.database);
