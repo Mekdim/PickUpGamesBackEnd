@@ -1,11 +1,9 @@
 module.exports = {
   database: {
-    // MARK: make this env variables and this will be fixed
        host:"localhost",
-       user: "mekua",
-       database:"postgres",
-       password:null,
+       user: "mickey",
+       database:"kuas",
+       password:"123456",
        port:5432
   }
-  
 }

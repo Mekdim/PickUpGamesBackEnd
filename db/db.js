@@ -6,6 +6,7 @@ class db {
   constructor(options) {
     this.pool = new Pool(options);
   }
+
   async addProfile(values) {
     const client = await this.pool.connect();
     const addProfileQuery = {
@@ -13,7 +14,7 @@ class db {
       values: [...values],
       rowMode: "array",
     };
-    
+
     try {
       client.query("BEGIN");
       const result1 = await client.query(addProfileQuery);
@@ -42,7 +43,7 @@ class db {
       values: [...values],
       rowMode: "array",
     };
-    
+
     try {
       client.query("BEGIN");
       const result1 = await client.query(addProfilePictureQuery);
@@ -63,7 +64,7 @@ class db {
     }
   }
 
-  // 
+  //
   async getProfile(uid) {
     const query = {
       text: "SELECT * FROM Players WHERE uid = $1",
@@ -88,7 +89,8 @@ class db {
       client.release();
     }
   }
-  //Mark: get image for profile pictures image id here is the id of the player 
+
+  //Mark: get image for profile pictures image id here is the id of the player
   async getProfilePicture(id) {
     const query = {
       text: "SELECT * FROM Players INNER JOIN pictures on Players.id = Pictures.image_id WHERE image_id = $1 AND image_type= $2 ORDER BY Pictures.created_at DESC",
@@ -113,6 +115,7 @@ class db {
       client.release();
     }
   }
+
   async updateProfile(val) {
     const client = await this.pool.connect();
     const upDateProfile = {
@@ -120,7 +123,7 @@ class db {
       values: [...val],
       rowMode: "array",
     };
-   
+
 
     try {
       client.query("BEGIN");
@@ -265,16 +268,17 @@ class db {
   }
 
   async findSessionByPitchIdAndDate(sessionId, date = new Date()) {
-    let tomorrow = new Date(date);
-    tomorrow.setDate(date.getDate() + 1);
     const query = {
-      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND date between $2 and $3",
+      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND date_part('year',  date) = $2" +
+          "  AND date_part('month', date) = $3 AND  date_part('day', date) = $4",
       values: [
         sessionId,
-        date.toLocaleDateString(),
-        tomorrow.toLocaleDateString(),
+        date.getFullYear(),
+        date.getMonth() + 1, // because .getMonth() is 0 indexed
+        date.getDate(),
       ],
     };
+
     const client = await this.pool.connect();
     try {
       const results = await client.query(query);
@@ -293,7 +297,42 @@ class db {
     }
   }
 
-// find all pitches with address and description and id 
+  async findSessionByPitchIdByTwoDays(sessionId, date = new Date()) {
+
+    let tomorrow = new Date(date);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    console.log("today v ", date);
+    console.log("tomorrow v ", tomorrow);
+
+    try {
+      let todayEvents, tomorrowsEvents;
+      try {
+        todayEvents = await this.findSessionByPitchIdAndDate(sessionId, date);
+      } catch (todayError) {
+        if (todayError.name === "ResultsNotFound") {
+          todayEvents = [];
+        }
+      }
+
+      try {
+        tomorrowsEvents = await this.findSessionByPitchIdAndDate(sessionId, tomorrow);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          tomorrowsEvents = [];
+        }
+      }
+
+      return [todayEvents, tomorrowsEvents];
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    }
+  }
+
+// find all pitches with address and description and id
 async findPitches() {
   const querySessions = {
     text: "SELECT * FROM pitch ",
@@ -346,7 +385,7 @@ async findPitchByDayOfWeek(pitchId, dayofweek) {
   }
 }
 
- // find pitches 
+ // find pitches
 async findPitchesByDayOfWeek(dayofweek) {
   const query = {
     text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",

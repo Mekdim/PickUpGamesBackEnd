@@ -10,8 +10,8 @@ router.post("/addSession", async function (req, res, next) {
       req.body.pitch_id,
       req.body.name,
       getDate(req.body.date),
-      getTime(req.body.start_time),
-      getTime(req.body.end_time),
+      req.body.start_time,
+      req.body.end_time,
       req.body.duration,
       req.body.number_of_players
     ];
@@ -55,6 +55,17 @@ router.get("/:pitchId/:date/sessions", async function (req, res, next) {
   }
 });
 
+router.get("/:pitchId/:date/sessions/days", async function (req, res, next) {
+  console.log(req.params.pitchId);
+
+  try {
+    const results = await database.findSessionByPitchIdByTwoDays(req.params.pitchId, new Date(req.params.date));
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/sessions/:sessionId", async function (req, res, next) {
   console.log(req.params.sessionId);
 
@@ -84,11 +95,11 @@ router.get("/pitches", async function (req, res, next) {
   } catch (err) {
     next(err);
   }
-  
+
 });
 
 // show pitches - instead of pitch id, it will be location in the future - like Bole
-// date will also be start and end date instead of day of week 
+// date will also be start and end date instead of day of week
 router.get("/pitches/:pitchId/:dayofweek", async function (req, res, next) {
   console.log(req.params.pitchId);
   console.log(req.params.dayofweek);
@@ -100,7 +111,7 @@ router.get("/pitches/:pitchId/:dayofweek", async function (req, res, next) {
     next(err);
   }
 });
-// show pitches - for the day of the week when specific location isnt supplied 
+// show pitches - for the day of the week when specific location isnt supplied
 // date might also be start and end date in the future maybe
 router.get("/pitches/:dayofweek", async function (req, res, next) {
   console.log(req.params.dayofweek);
