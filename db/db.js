@@ -116,6 +116,32 @@ class db {
     }
   }
 
+  async getUsers () {
+
+    const query = {
+      text: "SELECT id, first_name, last_name FROM Players"
+    };
+
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied userId");
+      }
+      return results.rows;
+    } catch (error) {
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query user profile details ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
   async updateProfile(val) {
     const client = await this.pool.connect();
     const upDateProfile = {
@@ -301,8 +327,6 @@ class db {
 
     let tomorrow = new Date(date);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    console.log("today v ", date);
-    console.log("tomorrow v ", tomorrow);
 
     try {
       let todayEvents, tomorrowsEvents;
@@ -402,6 +426,43 @@ async findPitchesByDayOfWeek(dayofweek) {
       // it means it is just empty - no open pitches were found for that day of the week
     }
     return results.rows;
+  } catch (error) {
+    if (error.name === "ResultsNotFound") {
+      throw error;
+    }
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+}
+
+async findAllSessionPlayers(sessionId) {
+
+  const querySessionMembers = {
+    text: "SELECT player_id FROM session_members WHERE session_id = $1",
+    values: [sessionId],
+  };
+
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(querySessionMembers);
+    if (results.rows.length === 0) {
+      throw new ResultsNotFound("No results found for supplied pitchId");
+    }
+
+    let playerIds = results.rows.map(value => {
+      return value.player_id;
+    });
+
+    const queryPlayers= {
+      text: "SELECT first_name FROM players WHERE id = ANY($1::INT[])",
+      values: [playerIds],
+    };
+
+    const sessionMembers = await client.query(queryPlayers);
+
+    return sessionMembers.rows;
   } catch (error) {
     if (error.name === "ResultsNotFound") {
       throw error;

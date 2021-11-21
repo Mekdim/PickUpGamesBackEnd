@@ -54,7 +54,7 @@ router.put('/updateProfile', async function(req, res, next) {
    req.body.last_name,
    req.body.address,
    req.body.uid
-   
+
  ];
   try{
       let results = await database.updateProfile(val);
@@ -74,6 +74,16 @@ router.get('/getProfilePicture/:id', async function(req, res, next) {
     next(err);
   }
 });
+
+router.get('/all', async function(req, res, next) {
+    try{
+        const results = await database.getUsers();
+        res.status(201).json(results);
+    }catch(err){
+        next(err);
+    }
+});
+
 // MARK: not very great way of doing it but let it do. Authenticate maybe using jwt etc
 router.get('/getProfile/:uid', async function(req, res, next) {
   console.log(req.params.uid)

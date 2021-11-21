@@ -30,6 +30,16 @@ router.post("/addSession", async function (req, res, next) {
   }
 });
 
+router.get("/:sessionId/players", async (req, res, next) => {
+  try {
+    const pids = await database.findAllSessionPlayers(req.params.sessionId);
+    res.status(200).json(pids);
+
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.put("/joinSession", async function (req, res, next) {
   console.log(req.body);
   try {
