@@ -4,6 +4,7 @@ const config = require('../db/config')
 const { Pool } = require('pg')
 const pool = new Pool(config.database)
 const database = require("../db/db");
+const {sender} = require("../module/mailer");
 /* GET users listing. */
 router.get('/', async function(req, res, next) {
   const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [1])
@@ -83,6 +84,16 @@ router.get('/all', async function(req, res, next) {
         next(err);
     }
 });
+
+router.post('/invite/:sessionId', async (req, res, next) => {
+    res.json({status: "success"});
+    console.log("Ambassador Dina!", req.body);
+    try {
+        await sender({list: req.body, sessionId: req.params.sessionId});
+    } catch (error) {
+        console.error("unable to send ", error);
+    }
+})
 
 // MARK: not very great way of doing it but let it do. Authenticate maybe using jwt etc
 router.get('/getProfile/:uid', async function(req, res, next) {

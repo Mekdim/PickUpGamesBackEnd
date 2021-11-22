@@ -119,7 +119,7 @@ class db {
   async getUsers () {
 
     const query = {
-      text: "SELECT id, first_name, last_name FROM Players"
+      text: "SELECT id, first_name, last_name, email FROM Players"
     };
 
     const client = await this.pool.connect();
@@ -379,6 +379,34 @@ async findPitches() {
     client.release();
   }
 }
+
+async findPitchesById(pitchId) {
+
+  const querySessions = {
+    text: "SELECT * FROM pitch WHERE id = $1",
+    values: [
+      pitchId
+    ],
+  };
+
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(querySessions);
+    if (results.rows.length === 0) {
+      // if no pitch is in the database it means there are no pitches to show
+      console.log("no pitches to show")
+    }
+    return results.rows;
+  } catch (error) {
+    if (error.name === "ResultsNotFound") {
+      throw error;
+    }
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+  }
 
 // find pitch that is available the day of the week
 async findPitchByDayOfWeek(pitchId, dayofweek) {
