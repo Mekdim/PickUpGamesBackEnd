@@ -87,7 +87,6 @@ router.get('/all', async function(req, res, next) {
 
 router.post('/invite/:sessionId', async (req, res, next) => {
     res.json({status: "success"});
-    console.log("Ambassador Dina!", req.body);
     try {
         await sender({list: req.body, sessionId: req.params.sessionId});
     } catch (error) {
