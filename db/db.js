@@ -484,7 +484,7 @@ async findAllSessionPlayers(sessionId) {
     });
 
     const queryPlayers= {
-      text: "SELECT first_name FROM players WHERE id = ANY($1::INT[])",
+      text: "SELECT id, first_name FROM players WHERE id = ANY($1::INT[])",
       values: [playerIds],
     };
 
