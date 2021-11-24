@@ -370,20 +370,6 @@ let html = ({ sessionId }) => {
 
 // async..await is not allowed in global scope, must use a wrapper
 const sender = async ({ list, sessionId }) => {
-  // const calendar = ical({ name: "Kuas Inc Calendar" });
-  // // calendar.method("REQUEST");
-  // let oneHour = new Date();
-  // oneHour.setHours(oneHour.getHours() + 2);
-  //
-  // calendar.createEvent({
-  //   start: new Date(),
-  //   end: oneHour,
-  //   summary: "Lunch time Event",
-  //   description: "Lunch time session for a quick game ;)",
-  //   location: "A.A Stadium",
-  //   url: "http://localhost:3000",
-  //   organizer: { name: "Kuas Inc", email: "playkuasnow@gmail.com" },
-  // });
 
   let transporter = nodemailer.createTransport({
     service: "gmail",
@@ -420,11 +406,11 @@ const getCalendar = async ({sessionId}) => {
   let end = `${getDate(results.date.toISOString())}T${results.end_time}.000`;
 
   const calendar = ical({ name: "Kuas Inc Calendar" });
-  // calendar.method("REQUEST");
 
   calendar.createEvent({
     start: new Date(start),
     end: new Date(end),
+    timezone: "Africa/Addis_Ababa", // TODO fetch time zone from pitch data
     summary: results.name,
     description: `Join ${results.name} session for a quick game ;)`,
     location: `${pitchData[0].address}, ${pitchData[0].city}`,
