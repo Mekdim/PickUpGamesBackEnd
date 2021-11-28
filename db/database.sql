@@ -29,6 +29,7 @@ CREATE TABLE   Hosts(
 CREATE TABLE   Pitch(
     id SERIAL PRIMARY KEY,
     host_id Integer REFERENCES Hosts (id),
+    name VARCHAR(100),
     type VARCHAR(100),
     address VARCHAR(100),
     city VARCHAR(100),
