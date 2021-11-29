@@ -502,6 +502,51 @@ async findAllSessionPlayers(sessionId) {
   }
 }
 
+  async notify({type, playerId, entityId}) {
+    const client = await this.pool.connect();
+    const notificationInsert = {
+      text: "INSERT INTO Notifications (type, playerId, entityId) values($1, $2, $3) RETURNING id",
+      values: [type, playerId, entityId],
+    };
+
+    try {
+      client.query("BEGIN");
+      const result = await client.query(notificationInsert);
+      await client.query("COMMIT");
+
+      return result;
+    } catch (error) {
+      console.log("Error occurred when attempting to add notification ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+
+  async getNotification({playerId}) {
+    const notificationFetch = {
+      text: "Select * from Notifications where playerId = $1 AND seen = false ORDER BY updated_at DESC LIMIT 10",
+      values: [playerId],
+    };
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(notificationFetch);
+      return results.rows;
+    } catch (error) {
+      console.log("Unable to query notifications ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
 
 }
 

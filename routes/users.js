@@ -105,4 +105,15 @@ router.get('/getProfile/:uid', async function(req, res, next) {
   }
 });
 
+
+router.get('/notifications/:id', async function(req, res, next) {
+    console.log(req.params.id)
+    try{
+        const results = await database.getNotification({playerId: req.params.id});
+        res.status(200).json(results);
+    }catch(err){
+        next(err);
+    }
+});
+
 module.exports = router;

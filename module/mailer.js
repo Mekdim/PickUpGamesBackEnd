@@ -1,4 +1,5 @@
 "use strict";
+const {notify} = require("./notification");
 const nodemailer = require("nodemailer");
 const ical = require("ical-generator");
 const database = require("../db/db");
@@ -382,6 +383,13 @@ const sender = async ({ list, sessionId }) => {
   let body = html({ sessionId });
 
   let calendar = await getCalendar({sessionId});
+
+  // notify users
+  list.forEach((player) => {
+    if (player.id) {
+      notify({type: "SessionInvite", entityId: sessionId, playerId: player.id});
+    }
+  });
 
   list.forEach(async (player) => {
     let options = mailOptionGenerator({
