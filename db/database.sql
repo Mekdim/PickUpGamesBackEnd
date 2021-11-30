@@ -85,3 +85,13 @@ CREATE TABLE   Pictures(
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
+
+CREATE TABLE Notifications(
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20),
+    playerId Integer REFERENCES Players (id),
+    entityId Integer,
+    seen BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT current_timestamp,
+    updated_at TIMESTAMPTZ DEFAULT current_timestamp
+);
