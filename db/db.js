@@ -64,7 +64,6 @@ class db {
     }
   }
 
-  //
   async getProfile(uid) {
     const query = {
       text: "SELECT * FROM Players WHERE uid = $1",
@@ -169,7 +168,6 @@ class db {
       client.release();
     }
   }
-
 
   async addSession(values, fields) {
     const client = await this.pool.connect();
@@ -356,8 +354,8 @@ class db {
     }
   }
 
-// find all pitches with address and description and id
-async findPitches() {
+  // find all pitches with address and description and id
+  async findPitches() {
   const querySessions = {
     text: "SELECT * FROM pitch ",
   };
@@ -380,7 +378,7 @@ async findPitches() {
   }
 }
 
-async findPitchesById(pitchId) {
+  async findPitchesById(pitchId) {
 
   const querySessions = {
     text: "SELECT * FROM pitch WHERE id = $1",
@@ -408,8 +406,8 @@ async findPitchesById(pitchId) {
   }
   }
 
-// find pitch that is available the day of the week
-async findPitchByDayOfWeek(pitchId, dayofweek) {
+  // find pitch that is available the day of the week
+  async findPitchByDayOfWeek(pitchId, dayofweek) {
   const query = {
     text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
     values: [
@@ -437,8 +435,8 @@ async findPitchByDayOfWeek(pitchId, dayofweek) {
   }
 }
 
- // find pitches
-async findPitchesByDayOfWeek(dayofweek) {
+  // find pitches
+  async findPitchesByDayOfWeek(dayofweek) {
   const query = {
     text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
     values: [
@@ -465,7 +463,7 @@ async findPitchesByDayOfWeek(dayofweek) {
   }
 }
 
-async findAllSessionPlayers(sessionId) {
+  async findAllSessionPlayers(sessionId) {
 
   const querySessionMembers = {
     text: "SELECT player_id FROM session_members WHERE session_id = $1",
@@ -528,10 +526,9 @@ async findAllSessionPlayers(sessionId) {
     }
   }
 
-
   async getNotification({playerId}) {
     const notificationFetch = {
-      text: "Select * from Notifications where playerId = $1 AND seen = false ORDER BY updated_at DESC LIMIT 10",
+      text: "Select * from Notifications WHERE playerId = $1 AND seen = false ORDER BY updated_at DESC LIMIT 10",
       values: [playerId],
     };
     const client = await this.pool.connect();
@@ -541,6 +538,57 @@ async findAllSessionPlayers(sessionId) {
       return results.rows;
     } catch (error) {
       console.log("Unable to query notifications ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateSingleNotification({notificationId}) {
+
+    const client = await this.pool.connect();
+    const updateNotification = {
+      text: "UPDATE Notifications SET seen=TRUE WHERE id=$1",
+      values: [notificationId]
+    };
+
+    try {
+      client.query("BEGIN");
+      let result = await client.query(updateNotification);
+      await client.query("COMMIT");
+
+    } catch (error) {
+      console.log("Error occurred when attempting to update notification ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateMultipleNotification({notifications}) {
+
+    const client = await this.pool.connect();
+    const updateNotification = {
+      text: "UPDATE Notifications SET seen=TRUE WHERE id = ANY ($1)",
+      values: [notifications]
+    };
+
+    try {
+      client.query("BEGIN");
+      await client.query(updateNotification);
+      await client.query("COMMIT");
+    } catch (error) {
+      console.log("Error occurred when attempting to update notification ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();

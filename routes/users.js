@@ -96,7 +96,6 @@ router.post('/invite/:sessionId', async (req, res, next) => {
 
 // MARK: not very great way of doing it but let it do. Authenticate maybe using jwt etc
 router.get('/getProfile/:uid', async function(req, res, next) {
-  console.log(req.params.uid)
   try{
       const results = await database.getProfile(req.params.uid);
       res.status(201).json(results);
@@ -107,10 +106,28 @@ router.get('/getProfile/:uid', async function(req, res, next) {
 
 
 router.get('/notifications/:id', async function(req, res, next) {
-    console.log(req.params.id)
     try{
         const results = await database.getNotification({playerId: req.params.id});
         res.status(200).json(results);
+    }catch(err){
+        next(err);
+    }
+});
+
+router.put('/notifications/update/:id', async function(req, res, next) {
+    try{
+        await database.updateSingleNotification({notificationId: req.params.id});
+        res.status(200).json({status: "success"});
+    }catch(err){
+        next(err);
+    }
+});
+
+
+router.put('/notifications/update', async function(req, res, next) {
+    try{
+        await database.updateMultipleNotification({notifications: req.body.ids});
+        res.status(200).json({status: "success"});
     }catch(err){
         next(err);
     }
