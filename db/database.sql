@@ -95,3 +95,11 @@ CREATE TABLE Notifications(
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
+CREATE TABLE Tokens(
+    id SERIAL PRIMARY KEY,
+    accessToken VARCHAR,
+    refreshToken VARCHAR,
+    uid VARCHAR,
+    created_at TIMESTAMPTZ DEFAULT current_timestamp,
+    updated_at TIMESTAMPTZ DEFAULT current_timestamp
+);

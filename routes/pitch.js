@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const database = require("../db/db");
 const {getTime, getDate} = require("../util/time");
-
-router.post("/addSession", async function (req, res, next) {
+let authenticateToken = require('../Auth/authenticate');
+router.post("/addSession", authenticateToken, async function (req, res, next) {
   try {
     // TODO perform some data validation
     let val1 = [
@@ -40,7 +40,7 @@ router.get("/:sessionId/players", async (req, res, next) => {
   }
 });
 
-router.put("/joinSession", async function (req, res, next) {
+router.put("/joinSession",authenticateToken, async function (req, res, next) {
   console.log(req.body);
   try {
     let val1 = [req.body.session_id];

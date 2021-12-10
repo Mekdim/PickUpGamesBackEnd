@@ -5,12 +5,16 @@ const { Pool } = require('pg')
 const pool = new Pool(config.database)
 const database = require("../db/db");
 const {sender} = require("../module/mailer");
+let authenticateToken = require('../Auth/authenticate');
 /* GET users listing. */
 router.get('/', async function(req, res, next) {
   const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [1])
   res.send(rows);
 });
-
+router.post('/getUserIds', authenticateToken, (req, res, next)=>{
+  
+  res.status(201).json(req.user)
+});
 router.post('/addProfile', async function(req, res, next) {
    // Mark: validate if the req.body fields are not nil from the request - TODO
    let val1 = [
@@ -48,7 +52,7 @@ router.post('/addProfilePicture', async function(req, res, next) {
   }
 });
 // profilepicture, email and password should be changed separately
-router.put('/updateProfile', async function(req, res, next) {
+router.put('/updateProfile', authenticateToken, async function(req, res, next) {
   // Mark: validate if the req.body fields are not nil from the request - TODO
   let val = [
    req.body.first_name,
@@ -67,7 +71,7 @@ router.put('/updateProfile', async function(req, res, next) {
   }
 });
 
-router.get('/getProfilePicture/:id', async function(req, res, next) {
+router.get('/getProfilePicture/:id', authenticateToken, async function(req, res, next) {
   try{
       const results = await database.getProfilePicture(req.params.id);
       res.status(201).json(results);
@@ -85,7 +89,7 @@ router.get('/all', async function(req, res, next) {
     }
 });
 
-router.post('/invite/:sessionId', async (req, res, next) => {
+router.post('/invite/:sessionId', authenticateToken, async (req, res, next) => {
     res.json({status: "success"});
     try {
         await sender({list: req.body, sessionId: req.params.sessionId});
@@ -95,7 +99,7 @@ router.post('/invite/:sessionId', async (req, res, next) => {
 })
 
 // MARK: not very great way of doing it but let it do. Authenticate maybe using jwt etc
-router.get('/getProfile/:uid', async function(req, res, next) {
+router.get('/getProfile/:uid', authenticateToken, async function(req, res, next) {
   try{
       const results = await database.getProfile(req.params.uid);
       res.status(201).json(results);

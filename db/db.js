@@ -594,6 +594,122 @@ class db {
       client.release();
     }
   }
+  
+  // Add refreshToken and accesstoken
+  async addRefreshToken(values) {
+    const client = await this.pool.connect();
+    const addRefreshTokenQuery = {
+      text: 'INSERT INTO Tokens (refreshToken, accessToken, uid) values($1, $2, $3) RETURNING id',
+      values: [...values],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(addRefreshTokenQuery);
+     
+      await client.query("COMMIT");
+
+      return result1;
+    } catch (error) {
+      console.log("Error occurred when attempting to addRefreshToken ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+
+  async findRefreshToken(refreshToken) {
+
+    const querySessions = {
+      text: "SELECT * FROM tokens WHERE refreshToken = $1",
+      values: [
+        refreshToken
+      ],
+    };
+  
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        
+        console.log("The refresh token doesnt exist in the database")
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateRefreshToken(oldRefreshToken, newRefreshToken, newaccessToken ) {
+
+    const client = await this.pool.connect();
+    const updateRefreshToken = {
+      text: "UPDATE Tokens SET refreshToken=$1 , accessToken= $2 WHERE refreshToken=$3",
+      values: [newRefreshToken, newaccessToken, oldRefreshToken]
+    };
+
+    try {
+      client.query("BEGIN");
+      let result = await client.query(updateRefreshToken);
+      await client.query("COMMIT");
+      return result
+
+    } catch (error) {
+      console.log("Error occurred when attempting to update refreshToken ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  // delete refresh tokens for user uid
+
+  async deleteRefreshTokens(uid) {
+
+    const client = await this.pool.connect();
+    const updateRefreshToken = {
+      text: "DELETE FROM Tokens  WHERE uid=$1",
+      values: [uid]
+    };
+
+    try {
+      client.query("BEGIN");
+      let result = await client.query(updateRefreshToken);
+      
+      await client.query("COMMIT");
+      return result
+
+    } catch (error) {
+      console.log("Error occurred when attempting to update refreshToken ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
 
 
 }
