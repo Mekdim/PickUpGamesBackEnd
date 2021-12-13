@@ -54,6 +54,18 @@ router.put("/joinSession",authenticateToken, async function (req, res, next) {
   }
 });
 
+router.put("/leaveSession", async function (req, res, next) {
+  console.log(req.body);
+  try {
+    const results = await database.leaveSession({ sessionId: req.body.sessionId, playerId: req.body.playerId});
+    res.status(200).json({
+      status: "success",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/:pitchId/:date/sessions", async function (req, res, next) {
   console.log(req.params.pitchId);
 
@@ -101,6 +113,16 @@ router.get("/:pitchId/sessions", async function (req, res, next) {
 router.get("/pitches", async function (req, res, next) {
   try {
     const results = await database.findPitches();
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+
+});
+
+router.get("/:pitchId", async function (req, res, next) {
+  try {
+    const results = await database.findPitchesById(req.params.pitchId);
     res.status(200).json(results);
   } catch (err) {
     next(err);
