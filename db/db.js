@@ -236,6 +236,45 @@ class db {
     }
   }
 
+  async leaveSession({sessionId, playerId}) {
+    const client = await this.pool.connect();
+    const sessionUpdate = {
+      text: "UPDATE Sessions set number_of_players = number_of_players-1 where id=$1",
+      values: [sessionId]
+    };
+    const sessionMembersRemove = {
+      text: "DELETE FROM session_members WHERE player_id = $1 AND session_id = $2",
+      values: [playerId, sessionId],
+    };
+
+    const sessionMemberCheck = {
+      text: "SELECT player_id FROM session_members WHERE session_id = $1 AND player_id = $2",
+      values: [sessionId, playerId],
+    }
+
+    try {
+      client.query("BEGIN");
+      const result = await client.query(sessionMemberCheck);
+      if (result.rows.length <= 0) {
+        throw new Error("Invalid State: Can't remove a non existing player from a session");
+      }
+      const result1 = await client.query(sessionUpdate);
+      const result2 = await client.query(sessionMembersRemove);
+      await client.query("COMMIT");
+
+    } catch (error) {
+      console.log("Error occurred when attempting to leaveSession ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
   async findSessionByPitchId(pitchId) {
     const querySessions = {
       text: "SELECT * FROM Sessions WHERE pitch_id = $1",
@@ -327,7 +366,7 @@ class db {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     try {
-      let todayEvents, tomorrowsEvents;
+      let todayEvents, tomorrowsEvents, thirdDayEvents, forthDayEvents;
       try {
         todayEvents = await this.findSessionByPitchIdAndDate(sessionId, date);
       } catch (todayError) {
@@ -344,7 +383,26 @@ class db {
         }
       }
 
-      return [todayEvents, tomorrowsEvents];
+      try {
+        let thirdDay = new Date(date);
+        thirdDay.setDate(thirdDay.getDate() + 2);
+        thirdDayEvents = await this.findSessionByPitchIdAndDate(sessionId, thirdDay);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          thirdDayEvents = [];
+        }
+      }
+
+      try {
+        let fourthDay = new Date(date);
+        fourthDay.setDate(fourthDay.getDate() + 3);
+        forthDayEvents = await this.findSessionByPitchIdAndDate(sessionId, fourthDay);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          forthDayEvents = [];
+        }
+      }
+      return [todayEvents, tomorrowsEvents, thirdDayEvents, forthDayEvents];
     } catch (error) {
       if (error.name === "ResultsNotFound") {
         throw error;
@@ -381,9 +439,10 @@ class db {
   async findPitchesById(pitchId) {
 
   const querySessions = {
-    text: "SELECT * FROM pitch WHERE id = $1",
+    text: "SELECT * FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id WHERE pitch.id = $1 AND pictures.image_type = $2",
     values: [
-      pitchId
+      pitchId,
+      "PITCH_IMAGE"
     ],
   };
 
@@ -394,7 +453,7 @@ class db {
       // if no pitch is in the database it means there are no pitches to show
       console.log("no pitches to show")
     }
-    return results.rows;
+    return results.rows[0];
   } catch (error) {
     if (error.name === "ResultsNotFound") {
       throw error;
@@ -409,7 +468,7 @@ class db {
   // find pitch that is available the day of the week
   async findPitchByDayOfWeek(pitchId, dayofweek) {
   const query = {
-    text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
+    text: "SELECT distinct on (pitch_id) pitch_id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN openinghours on openinghours.pitch_id = pitch.id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
     values: [
       pitchId,
       dayofweek,
@@ -438,7 +497,7 @@ class db {
   // find pitches
   async findPitchesByDayOfWeek(dayofweek) {
   const query = {
-    text: "SELECT distinct on (pitch_id) pitch_id, address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
+    text: "SELECT distinct on (pitch_id) pitch_id, name, price, capacity ,address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
     values: [
       dayofweek,
       "PITCH_IMAGE"
@@ -503,7 +562,7 @@ class db {
   async notify({type, playerId, entityId}) {
     const client = await this.pool.connect();
     const notificationInsert = {
-      text: "INSERT INTO Notifications (type, playerId, entityId) values($1, $2, $3) RETURNING id",
+      text: "INSERT INTO Notifications (type, playerid, entityid) values($1, $2, $3) RETURNING id",
       values: [type, playerId, entityId],
     };
 
