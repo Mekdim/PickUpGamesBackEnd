@@ -409,7 +409,6 @@ const getCalendar = async ({sessionId}) => {
 
   const results = await database.findSessionBySessionId(sessionId);
   const pitchData = await database.findPitchesById(results.pitch_id);
-  console.log(pitchData)
   let start = `${getDate(results.date.toISOString())}T${results.start_time}.000`;
   let end = `${getDate(results.date.toISOString())}T${results.end_time}.000`;
 
