@@ -4,7 +4,15 @@ const { ResultsNotFound, DatabaseError } = require("../error/Error");
 
 class db {
   constructor(options) {
-    this.pool = new Pool(options);
+    if (process.env.NODE_ENV=== 'production'){
+      console.log("production mode yee ")
+      console.log(process.env.DATABASE_URL)
+      this.pool = new Pool({connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }})
+    }
+    else{
+      this.pool = new Pool(options);
+    }
   }
 
   async addProfile(values) {
