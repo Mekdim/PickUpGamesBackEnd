@@ -13,6 +13,7 @@ let tokensRouter = require('./routes/tokensRouter');
 
 let app = express();
 
+app.options('*', cors())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
