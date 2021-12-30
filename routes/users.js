@@ -11,7 +11,7 @@ router.get('/', async function(req, res, next) {
   const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [1])
   res.send(rows);
 });
-router.post('/getUserIds', authenticateToken, (req, res, next)=>{
+router.get('/getUserIds', authenticateToken, (req, res, next)=>{
   
   res.status(201).json(req.user)
 });

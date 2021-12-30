@@ -409,7 +409,7 @@ const getCalendar = async ({sessionId}) => {
 
   const results = await database.findSessionBySessionId(sessionId);
   const pitchData = await database.findPitchesById(results.pitch_id);
-
+  console.log(pitchData)
   let start = `${getDate(results.date.toISOString())}T${results.start_time}.000`;
   let end = `${getDate(results.date.toISOString())}T${results.end_time}.000`;
 
@@ -421,7 +421,7 @@ const getCalendar = async ({sessionId}) => {
     timezone: "Africa/Addis_Ababa", // TODO fetch time zone from pitch data
     summary: results.name,
     description: `Join ${results.name} session for a quick game ;)`,
-    location: `${pitchData[0].address}, ${pitchData[0].city}`,
+    location: `${pitchData.address}, ${pitchData.city}`,
     url: `http://localhost:3000/session/${sessionId}`,
     organizer: { name: "Kuas Inc", email: "playkuasnow@gmail.com" },
   });
