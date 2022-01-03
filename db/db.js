@@ -393,7 +393,10 @@ class db {
     try {
       const results = await client.query(query);
       if (results.rows.length === 0) {
-        throw new ResultsNotFound("No results found for supplied pitchId");
+        // this could also mean there just were no sessions for that date so dont throw
+        return []
+        //throw new ResultsNotFound("No results found for supplied pitchId");
+        
       }
       return results.rows;
     } catch (error) {
