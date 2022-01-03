@@ -134,6 +134,17 @@ router.put("/leaveSession", async function (req, res, next) {
   }
 });
 
+router.delete("/deleteSession/:sessionId", async function (req, res, next) {
+  try {
+    const results = await database.deleteSession({ sessionId: req.params.sessionId});
+    res.status(200).json({
+      status: "success",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/:pitchId/:date/sessions", async function (req, res, next) {
   console.log(req.params.pitchId);
 
