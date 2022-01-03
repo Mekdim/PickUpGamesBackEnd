@@ -30,7 +30,7 @@ function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
   return true
 
 }
-router.post("/addSession", async function (req, res, next) {
+router.post("/addSession", authenticateToken, async function (req, res, next) {
   try {
     // TODO perform some data validation
     console.log(req.body)
