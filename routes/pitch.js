@@ -16,7 +16,7 @@ function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
     else if (startTime.isAfter(curStartTime) && startTime.isSameOrAfter(curEndTime)) {
       continue
     }
-    // it is inside allocated sesseion time so this is invalid
+    // it is inside allocated session time so this is invalid
     else if (startTime.isSameOrAfter(curStartTime) && startTime.isBefore(curEndTime)) {
       return false
     }
@@ -33,27 +33,20 @@ function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
 router.post("/addSession", async function (req, res, next) {
   try {
     // TODO perform some data validation
-    console.log("hi")
+    console.log(req.body)
     try {
-      if (req.body.duration < 3600000 || req.body.duration > 2*3600000 ){
+      // duration should be approximately between an hour and two hour. (uncertainity of 1 seconds )
+      if (req.body.duration < 3599000 || req.body.duration > 2*3600000+1000 ){
         return res.status(406).json({
           error: "The duration of games should be more than an hour and less than 2 hours ",
         });
       }
-      let sessionTimes = await database.findSessionByPitchIdAndDate(req.body.pitch_id, new Date(req.body.date)).catch(error =>
-         { 
-           return res.status(400).json({
-              error: "Error adding session",
-           })
-          }
-      )
+      let sessionTimes = await database.findSessionByPitchIdAndDate(req.body.pitch_id, new Date(req.body.date))
+      // couldnt find the session times 
       if (!sessionTimes || !Array.isArray(sessionTimes)){
         return 
       }
-      console.log(req.body.date)
-      console.log(new Date(req.body.date))
       var sortedTimes = sessionTimes.sort(compareDates)
-      console.log(sortedTimes)
       start_time = new moment(req.body.start_time, 'HH:mm:ss');
       end_time = new moment(req.body.end_time, 'HH:mm:ss');
       let confirmStatus = confirmValidityOfSessionTimes(sortedTimes, start_time, end_time)
@@ -62,7 +55,7 @@ router.post("/addSession", async function (req, res, next) {
           error: "Conflicting time slots to the date's session was given",
         });
       }
-      console.log(confirmStatus)
+      // function that sort will use as a parameter 
       function compareDates(a, b) {
         var a1 = new moment(a.start_time, 'HH:mm:ss');
         var a2 = new moment(b.start_time, 'HH:mm:ss');
@@ -74,7 +67,7 @@ router.post("/addSession", async function (req, res, next) {
         }
       }
     } catch (err) {
-      console.error(err)
+      console.trace(err)
       return res.status(400).json({
         error: "Error adding session",
       });
