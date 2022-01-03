@@ -275,6 +275,45 @@ class db {
     }
   }
 
+  async deleteSession({sessionId}) {
+    const client = await this.pool.connect();
+    const sessionUpdate = {
+      text: "DELETE FROM Sessions WHERE id=$1",
+      values: [sessionId]
+    };
+    const sessionMembersRemove = {
+      text: "DELETE FROM session_members WHERE session_id = $1",
+      values: [sessionId],
+    };
+
+    const sessionMemberCheck = {
+      text: "SELECT player_id FROM session_members WHERE session_id = $1",
+      values: [sessionId],
+    }
+
+    try {
+      client.query("BEGIN");
+      const result = await client.query(sessionMemberCheck);
+      if (result.rows.length > 1) {
+        throw new Error("Attempting to delete a session with many members in it");
+      }
+      const result2 = await client.query(sessionMembersRemove);
+      const result1 = await client.query(sessionUpdate);
+      await client.query("COMMIT");
+
+    } catch (error) {
+      console.log("Error occurred when attempting to deleteSession ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
   async findSessionByPitchId(pitchId) {
     const querySessions = {
       text: "SELECT * FROM Sessions WHERE pitch_id = $1",
@@ -653,7 +692,7 @@ class db {
       client.release();
     }
   }
-  
+
   // Add refreshToken and accesstoken
   async addRefreshToken(values) {
     const client = await this.pool.connect();
@@ -666,7 +705,7 @@ class db {
     try {
       client.query("BEGIN");
       const result1 = await client.query(addRefreshTokenQuery);
-     
+
       await client.query("COMMIT");
 
       return result1;
@@ -692,12 +731,12 @@ class db {
         refreshToken
       ],
     };
-  
+
     const client = await this.pool.connect();
     try {
       const results = await client.query(querySessions);
       if (results.rows.length === 0) {
-        
+
         console.log("The refresh token doesnt exist in the database")
       }
       return results.rows;
@@ -752,7 +791,7 @@ class db {
     try {
       client.query("BEGIN");
       let result = await client.query(updateRefreshToken);
-      
+
       await client.query("COMMIT");
       return result
 
