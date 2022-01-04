@@ -2,6 +2,7 @@ const express = require("express");
 const moment = require('moment')
 const router = express.Router();
 const database = require("../db/db");
+const {getOpeningHours} = require("../service/openingHours")
 const { getTime, getDate } = require("../util/time");
 let authenticateToken = require('../Auth/authenticate');
 // starttime and endtime as parameters are moment date objects here
@@ -42,9 +43,9 @@ router.post("/addSession", authenticateToken, async function (req, res, next) {
         });
       }
       let sessionTimes = await database.findSessionByPitchIdAndDate(req.body.pitch_id, new Date(req.body.date))
-      // couldnt find the session times 
+      // couldnt find the session times
       if (!sessionTimes || !Array.isArray(sessionTimes)){
-        return 
+        return
       }
       var sortedTimes = sessionTimes.sort(compareDates)
       start_time = new moment(req.body.start_time, 'HH:mm:ss');
@@ -55,7 +56,7 @@ router.post("/addSession", authenticateToken, async function (req, res, next) {
           error: "Conflicting time slots to the date's session was given",
         });
       }
-      // function that sort will use as a parameter 
+      // function that sort will use as a parameter
       function compareDates(a, b) {
         var a1 = new moment(a.start_time, 'HH:mm:ss');
         var a2 = new moment(b.start_time, 'HH:mm:ss');
@@ -167,6 +168,14 @@ router.get("/:pitchId/:date/sessions/days", async function (req, res, next) {
   }
 });
 
+router.get("/:pitchId/:date/openingHours", async (req, res, next) => {
+  try {
+    const results = await getOpeningHours({ pitchId: req.params.pitchId, date: new Date(req.params.date)});
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+})
 router.get("/sessions/:sessionId", async function (req, res, next) {
   console.log(req.params.sessionId);
 
