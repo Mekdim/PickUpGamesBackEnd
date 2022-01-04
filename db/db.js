@@ -3,7 +3,8 @@ const { Pool } = require("pg");
 const { ResultsNotFound, DatabaseError } = require("../error/Error");
 
 class db {
-  constructor(options) {
+   constructor(options) {
+   
     if (process.env.NODE_ENV=== 'production'){
       console.log("production mode yee ")
       console.log(process.env.DATABASE_URL)
@@ -11,7 +12,7 @@ class db {
         ssl: { rejectUnauthorized: false }})
     }
     else{
-      this.pool = new Pool(options);
+      this.pool =  new Pool(options);
     }
   }
 
@@ -748,7 +749,7 @@ class db {
       const results = await client.query(querySessions);
       if (results.rows.length === 0) {
 
-        console.log("The refresh token doesnt exist in the database")
+        console.trace("The refresh token doesnt exist in the database")
       }
       return results.rows;
     } catch (error) {
