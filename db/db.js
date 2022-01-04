@@ -396,7 +396,7 @@ class db {
         // this could also mean there just were no sessions for that date so dont throw
         return []
         //throw new ResultsNotFound("No results found for supplied pitchId");
-        
+
       }
       return results.rows;
     } catch (error) {
@@ -409,7 +409,6 @@ class db {
       client.release();
     }
   }
-
   async findSessionByPitchIdByTwoDays(sessionId, date = new Date()) {
 
     let tomorrow = new Date(date);
@@ -457,6 +456,73 @@ class db {
       if (error.name === "ResultsNotFound") {
         throw error;
       }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    }
+  }
+
+  async findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeek) {
+    const query = {
+      text: "SELECT * FROM openinghours WHERE pitch_id = $1 AND dayofweek = $2",
+      values: [
+        pitchId,
+        dayOfWeek
+      ],
+    };
+
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        // this could also mean there just were no sessions for that date so dont throw
+        return []
+      }
+      return results.rows;
+    } catch (error) {
+      console.log("Unable to query openinghours ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async findOpeningHoursByPitchIdForDays(pitchId, dayOfWeeks) {
+
+    try {
+      let todayOpeningHours, tomorrowsOpeningHours, thirdDayOpeningHours, forthDayOpeningHours;
+      try {
+        todayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[0]);
+      } catch (todayError) {
+        if (todayError.name === "ResultsNotFound") {
+          todayOpeningHours = [];
+        }
+      }
+
+      try {
+        tomorrowsOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[1]);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          tomorrowsOpeningHours = [];
+        }
+      }
+
+      try {
+        thirdDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[2]);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          thirdDayOpeningHours = [];
+        }
+      }
+
+      try {
+        forthDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[3]);
+      } catch (tomorrowError) {
+        if (tomorrowError.name === "ResultsNotFound") {
+          forthDayOpeningHours = [];
+        }
+      }
+      return [todayOpeningHours, tomorrowsOpeningHours, thirdDayOpeningHours, forthDayOpeningHours];
+    } catch (error) {
       console.log("Unable to query Sessions ", error);
       throw new DatabaseError("Oops there seems to be some database error");
     }
