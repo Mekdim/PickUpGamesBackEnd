@@ -21,17 +21,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(cors());
 
-
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/tokens', tokensRouter);
 app.use('/pitch', pitchRouter);
 app.use('/log', log);
-
-
-
-
-
 
 app.use((error, req, res, next)=>{
     console.trace(error)
