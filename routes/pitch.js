@@ -137,7 +137,7 @@ router.put("/leaveSession", async function (req, res, next) {
 
 router.delete("/deleteSession/:sessionId", async function (req, res, next) {
   try {
-    const results = await database.deleteSession({ sessionId: req.params.sessionId});
+    const results = await database.deleteSession({ sessionId: req.params.sessionId, playerId: req.body.playerId});
     res.status(200).json({
       status: "success",
     });

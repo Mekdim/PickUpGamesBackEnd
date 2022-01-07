@@ -28,8 +28,7 @@ app.use('/pitch', pitchRouter);
 app.use('/log', log);
 
 app.use((error, req, res, next)=>{
-    console.trace(error)
-    res.status(error.statusCode || "500").json({"error":error});
+    res.status(error.statusCode || "500").json({"error":error?.message});
 })
 
 module.exports = app;

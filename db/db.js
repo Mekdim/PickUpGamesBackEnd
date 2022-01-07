@@ -1,10 +1,10 @@
 const config = require("./config");
 const { Pool } = require("pg");
-const { ResultsNotFound, DatabaseError } = require("../error/Error");
+const { ResultsNotFound, DatabaseError, ForbiddenAction } = require("../error/Error");
 
 class db {
    constructor(options) {
-   
+
     if (process.env.NODE_ENV=== 'production'){
       console.log("production mode yee ")
       console.log(process.env.DATABASE_URL)
@@ -265,14 +265,17 @@ class db {
       client.query("BEGIN");
       const result = await client.query(sessionMemberCheck);
       if (result.rows.length <= 0) {
-        throw new Error("Invalid State: Can't remove a non existing player from a session");
+        throw new ForbiddenAction("You are not a Member!");
       }
       const result1 = await client.query(sessionUpdate);
       const result2 = await client.query(sessionMembersRemove);
       await client.query("COMMIT");
 
     } catch (error) {
-      console.log("Error occurred when attempting to leaveSession ", error);
+      console.log("Unable to leaveSession ", error);
+      if (error.name === "ForbiddenAction") {
+        throw error;
+      }
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -284,7 +287,7 @@ class db {
     }
   }
 
-  async deleteSession({sessionId}) {
+  async deleteSession({sessionId, playerId}) {
     const client = await this.pool.connect();
     const sessionUpdate = {
       text: "DELETE FROM Sessions WHERE id=$1",
@@ -304,7 +307,10 @@ class db {
       client.query("BEGIN");
       const result = await client.query(sessionMemberCheck);
       if (result.rows.length > 1) {
-        throw new Error("Attempting to delete a session with many members in it");
+        throw new ForbiddenAction("There are other players!");
+      }
+      if (Number(result.rows[0].player_id) !== Number(playerId)) {
+        throw new ForbiddenAction("You are not a member!")
       }
       const result2 = await client.query(sessionMembersRemove);
       const result1 = await client.query(sessionUpdate);
@@ -312,6 +318,10 @@ class db {
 
     } catch (error) {
       console.log("Error occurred when attempting to deleteSession ", error);
+
+      if (error.name === "ForbiddenAction") {
+        throw error;
+      }
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {

@@ -7,6 +7,15 @@ class InvalidInput extends Error {
     }
 }
 
+class ForbiddenAction extends Error {
+    constructor(message) {
+        super();
+        this.name = this.constructor.name
+        this.message = message;
+        this.statusCode = 403;
+    }
+}
+
 class ResultsNotFound extends Error {
     constructor(message) {
         super();
@@ -39,4 +48,5 @@ module.exports = {
     ResultsNotFound,
     DatabaseError,
     UnknownError,
+    ForbiddenAction,
 }
