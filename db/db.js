@@ -633,7 +633,6 @@ class db {
   const client = await this.pool.connect();
   try {
     const results = await client.query(query);
-    console.log(results)
     if (results.rows.length === 0) {
       // it means it is just empty - no open pitches were found for that day of the week
     }

@@ -1,6 +1,6 @@
 const database = require("../db/db");
 
-const getOpeningHours =  async ({pitchId, date}) => {
+const getOpeningHours =  async (pitchId, date) => {
 
     let daysOfWeeks = getFourDaysOfTheWeek(date);
     let openingHours;

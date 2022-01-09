@@ -176,6 +176,17 @@ router.get("/:pitchId/:date/openingHours", async (req, res, next) => {
     next(err);
   }
 })
+
+router.get("/:pitchId/:date/all", async (req, res, next) => {
+  try {
+    let selectedDate = new Date(req.params.date);
+    const events = await database.findSessionByPitchIdByTwoDays(req.params.pitchId, selectedDate);
+    const hours = await getOpeningHours( req.params.pitchId, selectedDate);
+    res.status(200).json([events, hours]);
+  } catch (err) {
+    next(err);
+  }
+})
 router.get("/sessions/:sessionId", async function (req, res, next) {
   console.log(req.params.sessionId);
 
@@ -234,8 +245,6 @@ router.get("/pitches/:pitchId/:dayofweek", async function (req, res, next) {
 // show pitches - for the day of the week when specific location isnt supplied
 // date might also be start and end date in the future maybe
 router.get("/pitches/:dayofweek", async function (req, res, next) {
-  console.log(req.params.dayofweek);
-
   try {
     const results = await database.findPitchesByDayOfWeek(req.params.dayofweek);
     res.status(200).json(results);

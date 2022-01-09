@@ -69,7 +69,7 @@ router.post('/refreshTheToken', async (req, res, next) => {
         })
     }
     let results = await database.findRefreshToken(refreshToken)
-    if (!results || results.length == 0) {
+    if (!results || results.length === 0) {
         res.status(400).json({
             error: "Sorry We couldnt get the refreshToken in the db. It could have been updated already. Logout and retry"
         })
@@ -84,9 +84,6 @@ router.post('/refreshTheToken', async (req, res, next) => {
             let userWithTokenUpdated = { firstname: user.firstname, lastname: user.lastname, uid: user.uid, id: user.id }
             const newaccessToken = generateAccessToken(userWithTokenUpdated)
             const newrefreshToken = generateRefreshToken(userWithTokenUpdated)
-
-
-
             let result1 = await database.updateRefreshToken(refreshToken, newrefreshToken, newaccessToken)
             if (!result1) {
                 return res.status(400).json({ "error": "There was some error updating refresh Token" })
@@ -158,12 +155,10 @@ router.post('/login', async (req, res, next) => {
 });
 
 function generateAccessToken(user) {
-    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '100s' })
-    return accessToken
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '3600s'})
 }
 function generateRefreshToken(user) {
-    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '20000000s' })
-    return refreshToken
+    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {expiresIn: '20000000s'})
 }
 
 module.exports = router;
