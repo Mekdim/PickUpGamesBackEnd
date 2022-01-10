@@ -43,6 +43,56 @@ class db {
       client.release();
     }
   }
+  async confirmInvitationCodeExists(invitationCode) {
+    const query = {
+      text: "SELECT * FROM invitationcodes WHERE invitationcode = $1 AND type = $2",
+      values: [invitationCode,"SENDER"],
+    };
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        return []
+      }
+      return results.rows;
+    } catch (error) {
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query user profile details ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+  async addInvitationCodesForNewUsers(values) {
+    const client = await this.pool.connect();
+    const addInvitationCode = {
+      text: 'INSERT INTO invitationcodes (type, invitationcode, playerid) values($1, $2, $3) RETURNING  id',
+      values: [...values],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(addInvitationCode);
+      await client.query("COMMIT");
+
+      return result1.rows[0][0];
+    } catch (error) {
+      console.log("Error occurred when attempting to add invitation code ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
 
   // Add profile picture for player of id x
   async addProfilePicture(values) {

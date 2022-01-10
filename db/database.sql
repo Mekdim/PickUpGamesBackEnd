@@ -103,3 +103,11 @@ CREATE TABLE Tokens(
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
+CREATE TABLE InvitationCodes(
+    id SERIAL PRIMARY KEY,
+    TYPE VARCHAR,
+    invitationCode  VARCHAR,
+    playerId VARCHAR ,
+    created_at TIMESTAMPTZ DEFAULT current_timestamp,
+    updated_at TIMESTAMPTZ DEFAULT current_timestamp
+);
