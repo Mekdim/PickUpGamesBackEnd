@@ -61,12 +61,38 @@ class db {
       if (error.name === "ResultsNotFound") {
         throw error;
       }
-      console.log("Unable to query user profile details ", error);
+      console.log("Unable to query user inviation codes of senders/givers ", error);
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
     }
   }
+
+  async isUserEligibleForFreeGame(playerId) {
+    const query = {
+      text: "SELECT * FROM invitationcodes WHERE playerid = $1 AND type = $2",
+      values: [playerId,"RECEIVER"],
+    };
+    const client = await this.pool.connect();
+    try {
+
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        return []
+      }
+      return results.rows;
+    } catch (error) {
+
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query user inviation codes for free games ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
   async addInvitationCodesForNewUsers(values) {
     const client = await this.pool.connect();
     const addInvitationCode = {

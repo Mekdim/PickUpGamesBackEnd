@@ -52,6 +52,27 @@ router.post('/confirmInvitationCode', async function(req, res, next) {
   }
 });
 
+// check if user is eligible for free games (has invitation code that is active and not used)
+
+router.post('/isUserEligibleForFreeGame', async function(req, res, next) {
+  // Mark: validate if the req.body fields are not nil from the request - TODO
+  try{
+      let isUserEligible = await database.isUserEligibleForFreeGame(req.body.id)
+      console.log(isUserEligible)
+      if (!isUserEligible.length || isUserEligible.length < 1){
+         return res.status(400).json({
+          error:"User is not eligble for free games "
+        })
+      }
+      res.status(200).json({
+        status:"True! User is eligible for free games"
+      })
+  }catch(err){
+     next(err)
+  }
+});
+
+
 router.post('/saveInvitationCode', async function(req, res, next) {
   // Mark: validate if the req.body fields are not nil from the request - TODO
   let val1 = [
