@@ -35,6 +35,66 @@ router.post('/addProfile', async function(req, res, next) {
    }
 });
 
+router.post('/confirmInvitationCode', async function(req, res, next) {
+  // Mark: validate if the req.body fields are not nil from the request - TODO
+  try{
+      let existingCode = await database.confirmInvitationCodeExists(req.body.invitationcode)
+      if (!existingCode.length || existingCode.length < 1){
+         return res.status(400).json({
+          error:"The invitation code doesnt exist"
+        })
+      }
+      res.status(200).json({
+        status:"success! It exists"
+      })
+  }catch(err){
+     next(err)
+  }
+});
+
+// check if user is eligible for free games (has invitation code that is active and not used)
+
+router.post('/isUserEligibleForFreeGame', async function(req, res, next) {
+  // Mark: validate if the req.body fields are not nil from the request - TODO
+  try{
+      let isUserEligible = await database.isUserEligibleForFreeGame(req.body.id)
+      console.log(isUserEligible)
+      if (!isUserEligible.length || isUserEligible.length < 1){
+         return res.status(400).json({
+          error:"User is not eligble for free games "
+        })
+      }
+      res.status(200).json({
+        status:"True! User is eligible for free games"
+      })
+  }catch(err){
+     next(err)
+  }
+});
+
+
+router.post('/saveInvitationCode', async function(req, res, next) {
+  // Mark: validate if the req.body fields are not nil from the request - TODO
+  let val1 = [
+   req.body.type,
+   req.body.invitationcode,
+   req.body.id,
+ ];
+  try{
+      let existingCode = await database.confirmInvitationCodeExists(req.body.invitationcode)
+      if (!existingCode.length || existingCode.length < 1){
+         return res.status(400).json({
+          error:"The invitation code doesnt exist"
+        })
+      }
+      let results = await database.addInvitationCodesForNewUsers(val1)
+      res.status(201).json({
+        status:"success"
+      })
+  }catch(err){
+     next(err)
+  }
+});
 router.post('/addProfilePicture', async function(req, res, next) {
   // Mark: validate if the req.body fields are not nil from the request - TODO
   let val1 = [
