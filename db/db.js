@@ -639,6 +639,25 @@ class db {
   }
 }
 
+async findPitchesWithImages() {
+     const queryPitches = {
+       text: "SELECT distinct on (pitch.id) pitch.id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id  WHERE pictures.image_type = $1 ORDER BY pitch.id, pictures.created_at DESC",
+       values: [
+         "PITCH_IMAGE"
+       ],
+     }
+  const client = await this.pool.connect();
+  try {
+    const results = await client.query(queryPitches);
+    return results.rows;
+  } catch (error) {
+    console.log("Unable to query Sessions ", error);
+    throw new DatabaseError("Oops there seems to be some database error");
+  } finally {
+    client.release();
+  }
+}
+
   async findPitchesById(pitchId) {
 
   const querySessions = {

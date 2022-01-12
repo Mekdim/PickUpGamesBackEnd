@@ -219,6 +219,16 @@ router.get("/pitches", async function (req, res, next) {
 
 });
 
+router.get("/featured", async function (req, res, next) {
+  try {
+    const results = await database.findPitchesWithImages();
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+
+});
+
 router.get("/:pitchId", async function (req, res, next) {
   try {
     const results = await database.findPitchesById(req.params.pitchId);
