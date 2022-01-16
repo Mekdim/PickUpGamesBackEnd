@@ -28,7 +28,7 @@ CREATE TABLE   Hosts(
 --  we can also use some other libraries for lat/long location*/
 CREATE TABLE   Pitch(
     id SERIAL PRIMARY KEY,
-    host_id Integer REFERENCES Hosts (id),
+    host_id Integer REFERENCES Players (id),
     name VARCHAR(100),
     type VARCHAR(100),
     address VARCHAR(100),

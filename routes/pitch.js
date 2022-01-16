@@ -86,10 +86,7 @@ router.post("/addSession", authenticateToken, async function (req, res, next) {
     ];
     let val2 = [req.body.player_id];
 
-    console.log(" Date  ", new Date(req.body.date));
     let results = await database.addSession(val1, val2);
-
-    console.info(results);
 
     res.status(201).json({
       status: "success",
@@ -98,6 +95,31 @@ router.post("/addSession", authenticateToken, async function (req, res, next) {
     next(err);
   }
 });
+
+router.post('/create', async (req, res, next) => {
+  try {
+    let value = [
+      req.body.hostId,
+      req.body.name,
+      req.body.type,
+      req.body.city,
+      req.body.country,
+      req.body.latitude,
+      req.body.longitude,
+      req.body.description,
+      req.body.price,
+      req.body.capacity,
+    ];
+
+    let results = await database.addPitch(value);
+
+    res.status(201).json({
+      status: "success",
+    });
+  } catch (e) {
+    next(e);
+  }
+})
 
 router.get("/:sessionId/players", async (req, res, next) => {
   try {

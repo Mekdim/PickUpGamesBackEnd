@@ -288,6 +288,33 @@ class db {
     }
   }
 
+  async addPitch(values) {
+    const client = await this.pool.connect();
+    const createPitch = {
+      text: "INSERT INTO Pitch (host_id, name, type, city, country, latitude, longitude, description, price, capacity) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+      values: [...values],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      const result1 = await client.query(createPitch);
+      await client.query("COMMIT");
+
+      return [result1];
+    } catch (error) {
+      console.log("Error occurred when attempting to addPitch ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
   async joinSession(val1, val2) {
     const client = await this.pool.connect();
     const sessionUpdate = {
