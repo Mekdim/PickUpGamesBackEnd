@@ -727,7 +727,6 @@ async findPitchesWithImages() {
   const client = await this.pool.connect();
   try {
     const results = await client.query(query);
-    console.log(results)
     if (results.rows.length === 0) {
       // dont throw. just means the pitch is not open that day of week
     }
@@ -746,7 +745,7 @@ async findPitchesWithImages() {
   // find pitches
   async findPitchesByDayOfWeek(dayofweek) {
   const query = {
-    text: "SELECT distinct on (pitch_id) pitch_id, name, price, capacity ,address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
+    text: "SELECT distinct on (pitch_id) pitch_id, name, price, capacity ,address, latitude, longitude ,description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
     values: [
       dayofweek,
       "PITCH_IMAGE"

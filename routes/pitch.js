@@ -264,8 +264,6 @@ router.get("/:pitchId", async function (req, res, next) {
 // show pitches - instead of pitch id, it will be location in the future - like Bole
 // date will also be start and end date instead of day of week
 router.get("/pitches/:pitchId/:dayofweek", async function (req, res, next) {
-  console.log(req.params.pitchId);
-  console.log(req.params.dayofweek);
 
   try {
     const results = await database.findPitchByDayOfWeek(req.params.pitchId, req.params.dayofweek);
