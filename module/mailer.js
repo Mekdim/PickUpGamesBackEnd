@@ -422,7 +422,7 @@ const getCalendar = async ({sessionId}) => {
     summary: results.name,
     description: `Join ${results.name} session for a quick game ;)`,
     location: `${pitchData.city}, ${pitchData.country}`,
-    url: `https://kuaas.com/session/${sessionId}`,
+    url: `https://kuaas.com/sessions/${sessionId}`,
     organizer: { name: "Kuas Inc", email: "playkuasnow@gmail.com" },
   });
 
