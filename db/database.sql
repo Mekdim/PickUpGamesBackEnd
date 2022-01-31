@@ -44,6 +44,8 @@ CREATE TABLE   Pitch(
 );
 CREATE TYPE DaysOfWeek AS ENUM ('monday','tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 
+CREATE TYPE SessionStatus AS ENUM ('Confirmed','Invited', 'Other');
+
 CREATE TABLE OpeningHours (
     id SERIAL PRIMARY KEY,
     pitch_id Integer REFERENCES Pitch (id),
@@ -73,6 +75,7 @@ CREATE TABLE session_members(
     id SERIAL PRIMARY KEY,
     session_id Integer REFERENCES Sessions (id),
     player_id Integer REFERENCES Players (id),
+    status SessionStatus,
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );

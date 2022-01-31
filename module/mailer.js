@@ -1,5 +1,5 @@
 "use strict";
-const {notify} = require("./notification");
+const {notify, addAsPending} = require("./notification");
 const nodemailer = require("nodemailer");
 const ical = require("ical-generator");
 const database = require("../db/db");
@@ -114,7 +114,7 @@ let html = ({ sessionId }) => {
     </style>
 </head>
 <body style="font-family:Tahoma;font-size:12px;color:#000000;font-weight:normal;word-wrap:break-word;word-break:normal;margin:0;padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;min-width:100%;background-color:#f2f2f2">
-<div style="display:none;font-size:0px;color:#999999;line-height:0px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Kuas Inc. play the game with your firends and stay healthy</div>
+<div style="display:none;font-size:0px;color:#999999;line-height:0px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Kuaas Inc. play the game with your firends and stay healthy</div>
 <center style="width:100%; table-layout:fixed; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
     <div class="webkit" style="max-width:640px;">
 
@@ -130,7 +130,7 @@ let html = ({ sessionId }) => {
                     <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tbody>
                         <tr>
-                            <td align="center"><a href="http://localhost:3000">
+                            <td align="center"><a href="https://kuaas.com">
                                 <img alt="Kuas logo" border="0" class="deviceWidth" src="https://firebasestorage.googleapis.com/v0/b/kuas-cd526.appspot.com/o/images%2FKuasMain.jpg?alt=media&token=d5ab2e6b-01b6-4bd5-9420-82dff4e6479b" style="display:block; margin: 0px; padding-top: 10px; padding-bottom: 10px;" width="80" height="60"  /> </a></td>
                         </tr>
                         </tbody>
@@ -192,7 +192,7 @@ let html = ({ sessionId }) => {
                     <table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;   border-radius: 2em;  overflow: hidden;">
                         <tbody>
                         <tr>
-                            <td align="center" valign="middle" bgcolor="#213b2c" width="185" height="50" style="color: #ffffff; line-height: 18px; vertical-align: middle;"> <a href="http://localhost:3000/sessions/${sessionId}" style="color: #ffffff; font-size:17px; font-family: 'Euclid Reg','Montserrat', Helvetica, Arial, sans-serif; text-decoration: none; width:100%; display:inline-block;">
+                            <td align="center" valign="middle" bgcolor="#213b2c" width="185" height="50" style="color: #ffffff; line-height: 18px; vertical-align: middle;"> <a href="https://kuaas.com/sessions/${sessionId}" style="color: #ffffff; font-size:17px; font-family: 'Euclid Reg','Montserrat', Helvetica, Arial, sans-serif; text-decoration: none; width:100%; display:inline-block;">
 
                                 <!--[if (gte mso 9)|(IE)]> <span style="color: #ffffff; font-family: 'arial narrow', helvetica, arial, sans-serif; line-height: 18px; font-size: 17px"> <![endif]-->
                                 Join session
@@ -230,7 +230,7 @@ let html = ({ sessionId }) => {
                     <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tbody>
                         <tr>
-                            <td><a href="http://localhost:3000"><img alt="Kuas picture" border="0" class="deviceWidth" src="https://firebasestorage.googleapis.com/v0/b/kuas-cd526.appspot.com/o/images%2Finvite.png?alt=media&token=0ebba289-8a78-4b2d-8885-388ab4c2b03a" style="display:block; margin: 0px;" width="640" /> </a></td>
+                            <td><a href="https://kuaas.com"><img alt="Kuas picture" border="0" class="deviceWidth" src="https://firebasestorage.googleapis.com/v0/b/kuas-cd526.appspot.com/o/images%2Finvite.png?alt=media&token=0ebba289-8a78-4b2d-8885-388ab4c2b03a" style="display:block; margin: 0px;" width="640" /> </a></td>
                         </tr>
                         </tbody>
                     </table>
@@ -261,7 +261,7 @@ let html = ({ sessionId }) => {
             <!--Start Subcopy  Section-->
             <tr style="background-color: #ffffff">
                 <td align="center" style="padding-right: 20px; padding-bottom:0px; padding-left: 20px;">
-                    <p style="font-family:'Euclid Light', 'Montserrat', Helvetica, Arial, sans-serif;font-size:22px;color:#000000;font-weight:normal;word-wrap:break-word;word-break:normal;margin:0;line-height:30px;max-width:480px">Kuas is a sport on-demand platform.</p>
+                    <p style="font-family:'Euclid Light', 'Montserrat', Helvetica, Arial, sans-serif;font-size:22px;color:#000000;font-weight:normal;word-wrap:break-word;word-break:normal;margin:0;line-height:30px;max-width:480px">Kuaas is a sport on-demand platform.</p>
                 </td>
             </tr>
 
@@ -275,7 +275,7 @@ let html = ({ sessionId }) => {
                     <table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;   border-radius: 2em;  overflow: hidden;">
                         <tbody>
                         <tr>
-                            <td align="center" valign="middle" bgcolor="#213b2c" width="150" height="50" style="color: #ffffff; line-height: 18px; vertical-align: middle;"> <a href="http://localhost:3000" style="color: #ffffff; font-size:17px; font-family: 'Euclid Reg','Montserrat', Helvetica, Arial, sans-serif; text-decoration: none; width:100%; display:inline-block;">
+                            <td align="center" valign="middle" bgcolor="#213b2c" width="150" height="50" style="color: #ffffff; line-height: 18px; vertical-align: middle;"> <a href="https://kuaas.com" style="color: #ffffff; font-size:17px; font-family: 'Euclid Reg','Montserrat', Helvetica, Arial, sans-serif; text-decoration: none; width:100%; display:inline-block;">
 
                                 <!--[if (gte mso 9)|(IE)]> <span style="color: #ffffff; font-family: 'arial narrow', helvetica, arial, sans-serif; line-height: 18px; font-size: 17px"> <![endif]-->
                                 Learn More
@@ -384,10 +384,11 @@ const sender = async ({ list, sessionId }) => {
 
   let calendar = await getCalendar({sessionId});
 
-  // notify users
+  // notify users for our
   list.forEach((player) => {
     if (player.id) {
       notify({type: "SessionInvite", entityId: sessionId, playerId: player.id});
+      addAsPending({sessionId, playerId: player.id })
     }
   });
 
@@ -412,7 +413,7 @@ const getCalendar = async ({sessionId}) => {
   let start = `${getDate(results.date.toISOString())}T${results.start_time}.000`;
   let end = `${getDate(results.date.toISOString())}T${results.end_time}.000`;
 
-  const calendar = ical({ name: "Kuas Inc Calendar" });
+  const calendar = ical({ name: "Kuaas Inc Calendar" });
 
   calendar.createEvent({
     start: new Date(start),
@@ -420,8 +421,8 @@ const getCalendar = async ({sessionId}) => {
     timezone: "Africa/Addis_Ababa", // TODO fetch time zone from pitch data
     summary: results.name,
     description: `Join ${results.name} session for a quick game ;)`,
-    location: `${pitchData.address}, ${pitchData.city}`,
-    url: `http://localhost:3000/session/${sessionId}`,
+    location: `${pitchData.city}, ${pitchData.country}`,
+    url: `https://kuaas.com/session/${sessionId}`,
     organizer: { name: "Kuas Inc", email: "playkuasnow@gmail.com" },
   });
 
@@ -430,7 +431,7 @@ const getCalendar = async ({sessionId}) => {
 
 const mailOptionGenerator = ({ to, body, calendar }) => {
   return {
-    from: '"Kuas Inc. " <playkuasnow@gmail.com>',
+    from: '"Kuaas Inc. " <playkuasnow@gmail.com>',
     to: [to],
     subject: "Hello Player! ⚽",
     html: body,
