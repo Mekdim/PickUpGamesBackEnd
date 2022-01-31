@@ -376,7 +376,7 @@ const sender = async ({ list, sessionId }) => {
     service: "gmail",
     auth: {
       user: "playkuasnow@gmail.com",
-      pass: "Ytrewq54321`",
+      pass: "This1Is2A3Strong4Password!",
     },
   });
 
