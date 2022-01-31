@@ -84,9 +84,8 @@ router.post("/addSession", authenticateToken, async function (req, res, next) {
       req.body.duration,
       req.body.number_of_players
     ];
-    let val2 = [req.body.player_id];
 
-    let results = await database.addSession(val1, val2);
+    let results = await database.addSession( {values: val1, playerId: req.body.player_id } );
 
     res.status(201).json({
       status: "success",
@@ -134,9 +133,7 @@ router.get("/:sessionId/players", async (req, res, next) => {
 router.put("/joinSession", authenticateToken, async function (req, res, next) {
   console.log(req.body);
   try {
-    let val1 = [req.body.session_id];
-    let val2 = [req.body.player_id, req.body.session_id];
-    const results = await database.joinSession(val1, val2);
+    const results = await database.joinSession({sessionId: req.body.session_id, playerId: req.body.player_id });
     res.status(201).json({
       status: "success",
     });

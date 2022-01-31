@@ -254,7 +254,7 @@ class db {
     }
   }
 
-  async addSession(values, fields) {
+  async addSession({values, playerId, sessionStatus = 'Confirmed'}) {
     const client = await this.pool.connect();
     const sessionQuery = {
       text: "INSERT INTO Sessions (pitch_id, name, date, start_time, end_time, duration, number_of_players) values($1, $2, $3, $4, $5, $6, $7) RETURNING id",
@@ -262,8 +262,8 @@ class db {
       rowMode: "array",
     };
     const sessionMembersQuery = {
-      text: "INSERT INTO session_members (player_id, session_id) values($1, $2)",
-      values: [...fields],
+      text: "INSERT INTO session_members (player_id, status, session_id) values($1, $2, $3)",
+      values: [playerId, sessionStatus],
       rowMode: "array",
     };
 
@@ -315,26 +315,94 @@ class db {
     }
   }
 
-  async joinSession(val1, val2) {
+  async joinSession({sessionId, playerId, sessionStatus = 'Confirmed' }) {
     const client = await this.pool.connect();
     const sessionUpdate = {
       text: "UPDATE Sessions set number_of_players = number_of_players+1 where id=$1",
-      values: [...val1],
+      values: [sessionId],
       rowMode: "array",
     };
+
     const sessionMembersJoin = {
-      text: "INSERT INTO session_members (player_id, session_id) values($1, $2)",
-      values: [...val2],
+      text: "INSERT INTO session_members (player_id, session_id, status) values($1, $2, $3)",
+      values: [ playerId, sessionId, sessionStatus ],
+      rowMode: "array",
+    };
+
+    const queryForCurrentPlayers = {
+      text: 'SELECT * FROM session_members WHERE player_id = $1 and session_id = $2',
+      values: [playerId, sessionId]
+    }
+
+    try {
+      client.query("BEGIN");
+      const currentMembers = await client.query(queryForCurrentPlayers);
+      if (currentMembers.rows.length === 0) {
+        // Not a member or invited
+        const result1 = await client.query(sessionUpdate);
+        const result2 = await client.query(sessionMembersJoin);
+        await client.query("COMMIT");
+        return [result1, result2.rows];
+      }
+
+      if (currentMembers.rows.length > 1) {
+        //TODO we have an error figure out
+        // one user has joined or been invited to
+        return;
+      }
+
+      let player = currentMembers.rows[0];
+      if (player.status ==='Confirmed') {
+        // do nothing user is already a participant
+        return;
+      }
+      const sessionMembersUpdate = {
+        text: "UPDATE session_members set status = $2 where id=$1",
+        values: [player.id, 'Confirmed'],
+        rowMode: "array",
+      };
+
+      const updatedSession = await client.query(sessionUpdate);
+      const updatedSessionMembers = await client.query(sessionMembersUpdate);
+      await client.query("COMMIT");
+      return [updatedSession, updatedSessionMembers.rows];
+
+    } catch (error) {
+      console.log("Error occurred when attempting to joinSession ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async inviteToSession({sessionId, playerId, sessionStatus = 'Invited' }) {
+    const client = await this.pool.connect();
+    const findSessionMember = {
+      text: "Select player_id as id FROM session_members WHERE player_id = $1 and session_id = $2",
+      values: [playerId, sessionId]
+    };
+
+    const sessionMembersJoin = {
+      text: "INSERT INTO session_members (player_id, session_id, status) values($1, $2, $3)",
+      values: [ playerId, sessionId, sessionStatus ],
       rowMode: "array",
     };
 
     try {
       client.query("BEGIN");
-      const result1 = await client.query(sessionUpdate);
-      const result2 = await client.query(sessionMembersJoin);
+      const result = await client.query(findSessionMember);
+      if (result.rows.length === 0) {
+        const result2 = await client.query(sessionMembersJoin);
+        await client.query("COMMIT");
+        return [result2.rows];
+      }
       await client.query("COMMIT");
-
-      return [result1, result2.rows];
+      return [];
     } catch (error) {
       console.log("Error occurred when attempting to joinSession ", error);
       try {
@@ -360,7 +428,7 @@ class db {
     };
 
     const sessionMemberCheck = {
-      text: "SELECT player_id FROM session_members WHERE session_id = $1 AND player_id = $2",
+      text: "SELECT player_id, status FROM session_members WHERE session_id = $1 AND player_id = $2",
       values: [sessionId, playerId],
     }
 
@@ -370,7 +438,10 @@ class db {
       if (result.rows.length <= 0) {
         throw new ForbiddenAction("You are not a Member!");
       }
-      const result1 = await client.query(sessionUpdate);
+      let player = result.rows[0];
+      if (player.status ==='Confirmed'){
+        const result1 = await client.query(sessionUpdate);
+      }
       const result2 = await client.query(sessionMembersRemove);
       await client.query("COMMIT");
 
@@ -460,18 +531,19 @@ class db {
   }
 
   async findSessionBySessionId(sessionId) {
-    const querySessions = {
-      text: "SELECT * FROM Sessions WHERE id = $1",
+
+    const joinedQuery = {
+      text: "SELECT Sessions.id as id, pitch_id, pitch.name as pitch_name, city ,Sessions.name as name, number_of_players, date, start_time, end_time, price, capacity FROM Sessions INNER JOIN pitch on pitch.id = Sessions.pitch_id WHERE Sessions.id = $1",
       values: [sessionId],
     };
 
     const querySessionMembers = {
-      text: "SELECT player_id FROM session_members WHERE session_id = $1",
+      text: "SELECT player_id, status FROM session_members WHERE session_id = $1",
       values: [sessionId],
     };
     const client = await this.pool.connect();
     try {
-      const results = await client.query(querySessions);
+      const results = await client.query(joinedQuery);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied pitchId");
       }
@@ -666,7 +738,7 @@ class db {
   }
 }
 
-async findPitchesWithImages() {
+  async findPitchesWithImages() {
      const queryPitches = {
        text: "SELECT distinct on (pitch.id) pitch.id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id  WHERE pictures.image_type = $1 ORDER BY pitch.id, pictures.created_at DESC",
        values: [
@@ -772,7 +844,7 @@ async findPitchesWithImages() {
   async findAllSessionPlayers(sessionId) {
 
   const querySessionMembers = {
-    text: "SELECT player_id FROM session_members WHERE session_id = $1",
+    text: "SELECT player_id as id, status, first_name FROM session_members INNER JOIN players on session_members.player_id = players.id WHERE session_id = $1",
     values: [sessionId],
   };
 
@@ -783,18 +855,19 @@ async findPitchesWithImages() {
       throw new ResultsNotFound("No results found for supplied pitchId");
     }
 
-    let playerIds = results.rows.map(value => {
-      return value.player_id;
-    });
+    // let playerIds = results.rows.map(value => {
+    //   return value.player_id;
+    // });
+    //
+    // const queryPlayers= {
+    //   text: "SELECT id, first_name FROM players WHERE id = ANY($1::INT[])",
+    //   values: [playerIds],
+    // };
+    //
+    // const sessionMembers = await client.query(queryPlayers);
 
-    const queryPlayers= {
-      text: "SELECT id, first_name FROM players WHERE id = ANY($1::INT[])",
-      values: [playerIds],
-    };
-
-    const sessionMembers = await client.query(queryPlayers);
-
-    return sessionMembers.rows;
+    // return sessionMembers.rows;
+    return results.rows;
   } catch (error) {
     if (error.name === "ResultsNotFound") {
       throw error;
@@ -930,7 +1003,6 @@ async findPitchesWithImages() {
     }
   }
 
-
   async findRefreshToken(refreshToken) {
 
     const querySessions = {
@@ -1015,9 +1087,6 @@ async findPitchesWithImages() {
       client.release();
     }
   }
-
-
-
 }
 
 const database = new db(config.database);
