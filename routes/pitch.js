@@ -2,10 +2,10 @@ const express = require("express");
 const moment = require('moment')
 const router = express.Router();
 const database = require("../db/db");
-const {getOpeningHours} = require("../service/openingHours")
-const { getTime, getDate } = require("../util/time");
+const { getOpeningHours, buildSpecialOpeningHours} = require("../service/openingHours")
+const {  getDate } = require("../util/time");
 let authenticateToken = require('../Auth/authenticate');
-// starttime and endtime as parameters are moment date objects here
+
 function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
   for (x = 0; x < currentSessionData.length; x++) {
     var curStartTime = new moment(currentSessionData[x].start_time, 'HH:mm:ss');
@@ -110,8 +110,8 @@ router.post('/create', async (req, res, next) => {
       req.body.capacity,
     ];
 
-    let results = await database.addPitch(value);
-
+    const formattedSpecialHours = buildSpecialOpeningHours(req.body?.specialHours?.raw)
+    await database.addPitch({pitchDetails: value, openingHoursDetails: req.body.openingHours, specialDays: formattedSpecialHours, imageUrl: req.body.url});
     res.status(201).json({
       status: "success",
     });
@@ -177,8 +177,6 @@ router.get("/:pitchId/:date/sessions", async function (req, res, next) {
 });
 
 router.get("/:pitchId/:date/sessions/days", async function (req, res, next) {
-  console.log(req.params.pitchId);
-
   try {
     const results = await database.findSessionByPitchIdByTwoDays(req.params.pitchId, new Date(req.params.date));
     res.status(200).json(results);
@@ -200,7 +198,7 @@ router.get("/:pitchId/:date/all", async (req, res, next) => {
   try {
     let selectedDate = new Date(req.params.date);
     const events = await database.findSessionByPitchIdByTwoDays(req.params.pitchId, selectedDate);
-    const hours = await getOpeningHours( req.params.pitchId, selectedDate);
+    const hours = await getOpeningHours( req.params.pitchId, selectedDate, database);
     res.status(200).json([events, hours]);
   } catch (err) {
     next(err);

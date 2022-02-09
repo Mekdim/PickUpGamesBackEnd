@@ -50,6 +50,7 @@ CREATE TABLE OpeningHours (
     id SERIAL PRIMARY KEY,
     pitch_id Integer REFERENCES Pitch (id),
     dayOfWeek DaysOfWeek,
+    enabled BOOLEAN DEFAULT true,
     start_time TIME,
     end_time TIME,
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
@@ -71,6 +72,9 @@ CREATE TABLE  Sessions (
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );
+
+CREATE TYPE SessionStatus AS ENUM ('Confirmed','Invited', 'Other');
+
 CREATE TABLE session_members(
     id SERIAL PRIMARY KEY,
     session_id Integer REFERENCES Sessions (id),
@@ -111,6 +115,17 @@ CREATE TABLE InvitationCodes(
     TYPE VARCHAR,
     invitationCode  VARCHAR,
     playerId VARCHAR ,
+    created_at TIMESTAMPTZ DEFAULT current_timestamp,
+    updated_at TIMESTAMPTZ DEFAULT current_timestamp
+);
+
+CREATE TABLE SpecialOpeningHours (
+    id SERIAL PRIMARY KEY,
+    pitch_id Integer REFERENCES Pitch (id),
+    date TIMESTAMPTZ,
+    open BOOLEAN DEFAULT false,
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ DEFAULT current_timestamp
 );

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "engines": {
-    "node": "14.17.5"
+    "node": "16.13.1"
   },
   "scripts": {
     "start": "node bin/server.js"
@@ -17,6 +17,7 @@
     "ical-generator": "^3.1.0",
     "jsonwebtoken": "^8.5.1",
     "log-timestamp": "^0.3.0",
+    "luxon": "^2.3.0",
     "moment": "^2.29.1",
     "morgan": "^1.10.0",
     "nodemailer": "^6.7.1",

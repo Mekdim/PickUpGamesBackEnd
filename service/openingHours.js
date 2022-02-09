@@ -1,11 +1,12 @@
-const database = require("../db/db");
+const { DateTime } = require("luxon");
+const {getHour, getMinute} = require("../util/time");
 
-const getOpeningHours =  async (pitchId, date) => {
+const getOpeningHours =  async (pitchId, date, db) => {
 
     let daysOfWeeks = getFourDaysOfTheWeek(date);
     let openingHours;
     try {
-        openingHours = await database.findOpeningHoursByPitchIdForDays(pitchId, daysOfWeeks);
+        openingHours = await db.findOpeningHoursByPitchIdForDays(pitchId, daysOfWeeks);
     } catch (error) {
         console.log("Unable to fetch opening hours ", error);
         openingHours = [[], [], [], []];
@@ -48,7 +49,8 @@ const setOpeningHours = (hours) => {
         let stop = line.end_time;
 
         start = Number(start.split(":")[0]);
-        stop = Number(stop.split(":")[0]);
+        let mark = Number(stop.split(":")[0]);
+        stop = Number(stop.split(":")[1]) > 0 ? mark: mark-1; // 12:30 should mark up to 13 but 12:00 should end at 12
 
         for (let index = start; index <= stop; index++) {
             result[index] = true;
@@ -58,6 +60,50 @@ const setOpeningHours = (hours) => {
     return result;
 }
 
+const formatOpeningHours = (object, pitchId) => {
+    let value = [];
+    for (let key in object) {
+        // pitch_id, dayOfWeek, enabled, start_time end_time
+        let data = object[key];
+        if (!data.enabled) {
+            data.startTime = '24:00';
+            data.endTime = '24:00';
+        }
+        let dayOpeningHours = [pitchId, data.day.toLowerCase(), data.enabled, data.startTime, data.endTime];
+        value.push(dayOpeningHours);
+    }
+    return value;
+}
+
+const buildSpecialOpeningHours = (rawObject) => {
+    let collection = [];
+    for (let key in rawObject) {
+        if (key.startsWith("special")) {
+            collection.push(rawObject[key])
+        }
+    }
+
+    collection = collection.map(specialOD => {
+        let storedValue = [];
+        let timeZonedDate = DateTime.fromFormat(specialOD.date, "dd-LL-y", { zone: "Africa/Addis_Ababa" })
+        storedValue.push(timeZonedDate.toISO());
+        storedValue.push(specialOD.enabled);
+        if (specialOD.enabled) {
+            storedValue.push(timeZonedDate.plus({hours: getHour(specialOD.startTime), minutes: getMinute(specialOD.startTime)}).toISO());
+            timeZonedDate.minus({hours: getHour(specialOD.startTime), minutes: getMinute(specialOD.startTime)});
+            storedValue.push(timeZonedDate.plus({hours: getHour(specialOD.endTime), minutes: getMinute(specialOD.endTime)}).toISO());
+        } else {
+            storedValue.push(null)
+            storedValue.push(null)
+        }
+        return storedValue;
+    })
+    return collection;
+}
+
+
 module.exports = {
-    getOpeningHours
+    getOpeningHours,
+    formatOpeningHours,
+    buildSpecialOpeningHours
 }
