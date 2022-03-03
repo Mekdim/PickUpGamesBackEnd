@@ -5,7 +5,7 @@ const database = require("../db/db");
 const { getOpeningHours, buildSpecialOpeningHours} = require("../service/openingHours")
 const {  getDate } = require("../util/time");
 let authenticateToken = require('../Auth/authenticate');
-
+var assert = require('assert');
 function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
   for (x = 0; x < currentSessionData.length; x++) {
     var curStartTime = new moment(currentSessionData[x].start_time, 'HH:mm:ss');
@@ -225,6 +225,47 @@ router.get("/:pitchId/sessions", async function (req, res, next) {
     next(err);
   }
 });
+
+// show events for pitches 
+
+router.get("/events", async function (req, res, next) {
+  try {
+  assert(req.query !=null)
+  assert(req.query.start !=null)
+  assert(req.query.end !=null)
+  assert(req.body.pitchId !=null)
+  // start date example format 2022-01-05T00:00:00-05
+  let startDatestr = req.query.start;
+  let endDatestr =  req.query.end;
+  var startDate = new moment(startDatestr).toDate();
+  var endDate = new moment(endDatestr).toDate();
+  function formatDate(date) {
+     var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+  
+      if (month.length < 2) 
+          month = '0' + month;
+      if (day.length < 2) 
+          day = '0' + day;
+  
+      return [year, month, day].join('-');
+  }
+  console.log(formatDate(startDate))
+  var formattedStartDate = formatDate(startDate)
+  var formattedEndDate = formatDate(endDate)
+  //res.status(200).json(200);
+  //return
+  const results = await database.findSessionByPitchIdForSpecifiedDates(req.body.pitchId, formattedStartDate, formattedEndDate );
+  res.status(200).json(results);
+  } catch (err) {
+    console.trace(err)
+    next(err);
+  }
+});
+
+
 // show pitches - Address and description
 router.get("/pitches", async function (req, res, next) {
   try {
