@@ -235,10 +235,8 @@ router.get("/events", async function (req, res, next) {
   assert(req.query.end !=null)
   assert(req.body.pitchId !=null)
   // start date example format 2022-01-05T00:00:00-05
-  let startDatestr = req.query.start;
-  let endDatestr =  req.query.end;
-  var startDate = new moment(startDatestr).toDate();
-  var endDate = new moment(endDatestr).toDate();
+  var startDate = new moment(req.query.start).toDate();
+  var endDate = new moment(req.query.end).toDate();
   function formatDate(date) {
      var d = new Date(date),
         month = '' + (d.getMonth() + 1),
@@ -252,13 +250,23 @@ router.get("/events", async function (req, res, next) {
   
       return [year, month, day].join('-');
   }
-  console.log(formatDate(startDate))
   var formattedStartDate = formatDate(startDate)
   var formattedEndDate = formatDate(endDate)
   //res.status(200).json(200);
   //return
   const results = await database.findSessionByPitchIdForSpecifiedDates(req.body.pitchId, formattedStartDate, formattedEndDate );
-  res.status(200).json(results);
+  let modifiedRsults = results.map(item=>{
+    var obj = {
+      start : item.start_time,
+      title :item.name,
+      end : item.end_time,
+      date : item.date
+    }
+    return obj
+    
+    
+  })
+  res.status(200).json(modifiedRsults);
   } catch (err) {
     console.trace(err)
     next(err);
