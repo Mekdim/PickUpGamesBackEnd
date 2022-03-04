@@ -1,25 +1,30 @@
 const config = require("./config");
 const { Pool } = require("pg");
-const { ResultsNotFound, DatabaseError, ForbiddenAction } = require("../error/Error");
-const moment = require('moment')
-class db {
-   constructor(options) {
+const {
+  ResultsNotFound,
+  DatabaseError,
+  ForbiddenAction,
+} = require("../error/Error");
+const { formatOpeningHours } = require("../service/openingHours");
 
-    if (process.env.NODE_ENV === 'production'){
-      console.log("production mode yee ")
-      console.log(process.env.DATABASE_URL)
-      this.pool = new Pool({connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }})
-    }
-    else{
-      this.pool =  new Pool(options);
+class db {
+  constructor(options) {
+    if (process.env.NODE_ENV === "production") {
+      console.log("production mode yee ");
+      console.log(process.env.DATABASE_URL);
+      this.pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      });
+    } else {
+      this.pool = new Pool(options);
     }
   }
 
   async addProfile(values) {
     const client = await this.pool.connect();
     const addProfileQuery = {
-      text: 'INSERT INTO players (first_name, last_name, email, uid, phone_number) values($1, $2, $3, $4, $5) RETURNING  id',
+      text: "INSERT INTO players (first_name, last_name, email, uid, phone_number) values($1, $2, $3, $4, $5) RETURNING  id",
       values: [...values],
       rowMode: "array",
     };
@@ -43,25 +48,27 @@ class db {
       client.release();
     }
   }
+
   async confirmInvitationCodeExists(invitationCode) {
     const query = {
       text: "SELECT * FROM invitationcodes WHERE invitationcode = $1 AND type = $2",
-      values: [invitationCode,"SENDER"],
+      values: [invitationCode, "SENDER"],
     };
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(query);
       if (results.rows.length === 0) {
-        return []
+        return [];
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
-      console.log("Unable to query user inviation codes of senders/givers ", error);
+      console.log(
+        "Unable to query user inviation codes of senders/givers ",
+        error
+      );
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
@@ -71,22 +78,23 @@ class db {
   async isUserEligibleForFreeGame(playerId) {
     const query = {
       text: "SELECT * FROM invitationcodes WHERE playerid = $1 AND type = $2",
-      values: [playerId,"RECEIVER"],
+      values: [playerId, "RECEIVER"],
     };
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(query);
       if (results.rows.length === 0) {
-        return []
+        return [];
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
-      console.log("Unable to query user inviation codes for free games ", error);
+      console.log(
+        "Unable to query user inviation codes for free games ",
+        error
+      );
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
@@ -96,7 +104,7 @@ class db {
   async addInvitationCodesForNewUsers(values) {
     const client = await this.pool.connect();
     const addInvitationCode = {
-      text: 'INSERT INTO invitationcodes (type, invitationcode, playerid) values($1, $2, $3) RETURNING  id',
+      text: "INSERT INTO invitationcodes (type, invitationcode, playerid) values($1, $2, $3) RETURNING  id",
       values: [...values],
       rowMode: "array",
     };
@@ -108,7 +116,10 @@ class db {
 
       return result1.rows[0][0];
     } catch (error) {
-      console.log("Error occurred when attempting to add invitation code ", error);
+      console.log(
+        "Error occurred when attempting to add invitation code ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -124,7 +135,7 @@ class db {
   async addProfilePicture(values) {
     const client = await this.pool.connect();
     const addProfilePictureQuery = {
-      text: 'INSERT INTO pictures (image_url, image_type, image_id ) values($1, $2, $3) RETURNING id',
+      text: "INSERT INTO pictures (image_url, image_type, image_id ) values($1, $2, $3) RETURNING id",
       values: [...values],
       rowMode: "array",
     };
@@ -137,7 +148,10 @@ class db {
 
       return [result1];
     } catch (error) {
-      console.log("Error occurred when attempting to addProfilePicture ", error);
+      console.log(
+        "Error occurred when attempting to addProfilePicture ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -156,14 +170,12 @@ class db {
     };
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(query);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied userId");
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
@@ -182,14 +194,12 @@ class db {
     };
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(query);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied userId");
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
@@ -200,22 +210,19 @@ class db {
     }
   }
 
-  async getUsers () {
-
+  async getUsers() {
     const query = {
-      text: "SELECT id, first_name, last_name, email FROM Players"
+      text: "SELECT id, first_name, last_name, email FROM Players",
     };
 
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(query);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied userId");
       }
       return results.rows;
     } catch (error) {
-
       if (error.name === "ResultsNotFound") {
         throw error;
       }
@@ -233,7 +240,6 @@ class db {
       values: [...val],
       rowMode: "array",
     };
-
 
     try {
       client.query("BEGIN");
@@ -254,7 +260,7 @@ class db {
     }
   }
 
-  async addSession(values, fields) {
+  async addSession({ values, playerId, sessionStatus = "Confirmed" }) {
     const client = await this.pool.connect();
     const sessionQuery = {
       text: "INSERT INTO Sessions (pitch_id, name, date, start_time, end_time, duration, number_of_players) values($1, $2, $3, $4, $5, $6, $7) RETURNING id",
@@ -262,8 +268,8 @@ class db {
       rowMode: "array",
     };
     const sessionMembersQuery = {
-      text: "INSERT INTO session_members (player_id, session_id) values($1, $2)",
-      values: [...fields],
+      text: "INSERT INTO session_members (player_id, status, session_id) values($1, $2, $3)",
+      values: [playerId, sessionStatus],
       rowMode: "array",
     };
 
@@ -288,20 +294,59 @@ class db {
     }
   }
 
-  async addPitch(values) {
+  async addPitch({ pitchDetails, openingHoursDetails, specialDays, imageUrl }) {
     const client = await this.pool.connect();
     const createPitch = {
-      text: "INSERT INTO Pitch (host_id, name, type, city, country, latitude, longitude, description, price, capacity) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
-      values: [...values],
+      text:
+        "INSERT INTO Pitch " +
+        "(host_id, name, type, city, country, latitude, longitude, description, price, capacity)" +
+        " values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+      values: [...pitchDetails],
       rowMode: "array",
     };
 
     try {
       client.query("BEGIN");
-      const result1 = await client.query(createPitch);
+      const pitchData = await client.query(createPitch);
+      let openHours = formatOpeningHours(
+        openingHoursDetails,
+        pitchData.rows[0][0]
+      );
+
+      let specialHours = specialDays.map((row) => {
+        row.unshift(pitchData.rows[0][0]);
+        return row;
+      });
+
+      openHours.map(async (value) => {
+        const createOpeningHours = {
+          text: "INSERT INTO openinghours (pitch_id, dayOfWeek, enabled, start_time, end_time) values($1, $2, $3, $4, $5) RETURNING id",
+          values: [...value],
+          rowMode: "array",
+        };
+        await client.query(createOpeningHours);
+      });
+
+      specialHours.map(async (value) => {
+        const createSpecialHours = {
+          text: "INSERT INTO specialopeninghours (pitch_id, date, open, start_time, end_time) values($1, $2, $3, $4, $5) RETURNING id",
+          values: [...value],
+          rowMode: "array",
+        };
+        await client.query(createSpecialHours);
+      });
+
+      const addPitchImage = {
+        text: "INSERT INTO pictures (image_url, image_type, image_id ) values($1, $2, $3) RETURNING id",
+        values: [imageUrl, "PITCH_IMAGE", pitchData.rows[0][0]],
+        rowMode: "array",
+      };
+
+      await client.query(addPitchImage);
+
       await client.query("COMMIT");
 
-      return [result1];
+      return [pitchData];
     } catch (error) {
       console.log("Error occurred when attempting to addPitch ", error);
       try {
@@ -315,26 +360,197 @@ class db {
     }
   }
 
-  async joinSession(val1, val2) {
+  async updatePitchDetails({ pitchDetails, pitchId }) {
     const client = await this.pool.connect();
-    const sessionUpdate = {
-      text: "UPDATE Sessions set number_of_players = number_of_players+1 where id=$1",
-      values: [...val1],
-      rowMode: "array",
-    };
-    const sessionMembersJoin = {
-      text: "INSERT INTO session_members (player_id, session_id) values($1, $2)",
-      values: [...val2],
+    const updatePitch = {
+      text: "UPDATE pitch set name = $1, description = $2, price = $3, capacity = $4 WHERE id=$5",
+      values: [...pitchDetails, pitchId],
       rowMode: "array",
     };
 
     try {
       client.query("BEGIN");
-      const result1 = await client.query(sessionUpdate);
-      const result2 = await client.query(sessionMembersJoin);
+      await client.query(updatePitch);
       await client.query("COMMIT");
+    } catch (error) {
+      console.log("Error occurred when attempting to addPitch ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
 
-      return [result1, result2.rows];
+  async updatePitchLocation({ pitchDetails, pitchId }) {
+    const client = await this.pool.connect();
+    const updatePitch = {
+      text: "UPDATE pitch set latitude = $1, longitude = $2 WHERE id=$3",
+      values: [...pitchDetails, pitchId],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      await client.query(updatePitch);
+      await client.query("COMMIT");
+    } catch (error) {
+      console.log("Error occurred when updating pitch location ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updatePitchType({ pitchType, pitchId }) {
+    const client = await this.pool.connect();
+    const updatePitch = {
+      text: "UPDATE pitch set type = $2 WHERE id=$1",
+      values: [pitchId, ...pitchType],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      await client.query(updatePitch);
+      await client.query("COMMIT");
+    } catch (error) {
+      console.log(
+        "Error occurred when attempting to update pitch type ",
+        error
+      );
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updatePitchUrl({ pitchUrl, pitchId }) {
+    const client = await this.pool.connect();
+    const updatePitchUrl = {
+      text: "UPDATE pictures set image_url = $2 WHERE image_id=$1",
+      values: [pitchId, ...pitchUrl],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      await client.query(updatePitchUrl);
+      await client.query("COMMIT");
+    } catch (error) {
+      console.log(
+        "Error occurred when attempting to update pitch type ",
+        error
+      );
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async updatePitchHours(hours) {
+    hours.map(async (hour) => {
+      await this.updatePitchHour(hour);
+    });
+  }
+
+  async updatePitchHour(hour) {
+    const client = await this.pool.connect();
+    const updatePitchHours = {
+      text: "UPDATE openinghours set  start_time = $2, end_time = $3, enabled = $4 WHERE id=$1",
+      values: [...hour],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      await client.query(updatePitchHours);
+      await client.query("COMMIT");
+    } catch (error) {
+      console.log(
+        "Error occurred when attempting to update pitch type ",
+        error
+      );
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async joinSession({ sessionId, playerId, sessionStatus = "Confirmed" }) {
+    const client = await this.pool.connect();
+    const sessionUpdate = {
+      text: "UPDATE Sessions set number_of_players = number_of_players+1 where id=$1",
+      values: [sessionId],
+      rowMode: "array",
+    };
+
+    const sessionMembersJoin = {
+      text: "INSERT INTO session_members (player_id, session_id, status) values($1, $2, $3)",
+      values: [playerId, sessionId, sessionStatus],
+      rowMode: "array",
+    };
+
+    const queryForCurrentPlayers = {
+      text: "SELECT * FROM session_members WHERE player_id = $1 and session_id = $2",
+      values: [playerId, sessionId],
+    };
+
+    try {
+      client.query("BEGIN");
+      const currentMembers = await client.query(queryForCurrentPlayers);
+      if (currentMembers.rows.length === 0) {
+        // Not a member or invited
+        const result1 = await client.query(sessionUpdate);
+        const result2 = await client.query(sessionMembersJoin);
+        await client.query("COMMIT");
+        return [result1, result2.rows];
+      }
+
+      if (currentMembers.rows.length > 1) {
+        //TODO we have an error figure out
+        // one user has joined or been invited to
+        return;
+      }
+
+      let player = currentMembers.rows[0];
+      if (player.status === "Confirmed") {
+        // do nothing user is already a participant
+        return;
+      }
+      const sessionMembersUpdate = {
+        text: "UPDATE session_members set status = $2 where id=$1",
+        values: [player.id, "Confirmed"],
+        rowMode: "array",
+      };
+
+      const updatedSession = await client.query(sessionUpdate);
+      const updatedSessionMembers = await client.query(sessionMembersUpdate);
+      await client.query("COMMIT");
+      return [updatedSession, updatedSessionMembers.rows];
     } catch (error) {
       console.log("Error occurred when attempting to joinSession ", error);
       try {
@@ -348,11 +564,47 @@ class db {
     }
   }
 
-  async leaveSession({sessionId, playerId}) {
+  async inviteToSession({ sessionId, playerId, sessionStatus = "Invited" }) {
+    const client = await this.pool.connect();
+    const findSessionMember = {
+      text: "Select player_id as id FROM session_members WHERE player_id = $1 and session_id = $2",
+      values: [playerId, sessionId],
+    };
+
+    const sessionMembersJoin = {
+      text: "INSERT INTO session_members (player_id, session_id, status) values($1, $2, $3)",
+      values: [playerId, sessionId, sessionStatus],
+      rowMode: "array",
+    };
+
+    try {
+      client.query("BEGIN");
+      const result = await client.query(findSessionMember);
+      if (result.rows.length === 0) {
+        const result2 = await client.query(sessionMembersJoin);
+        await client.query("COMMIT");
+        return [result2.rows];
+      }
+      await client.query("COMMIT");
+      return [];
+    } catch (error) {
+      console.log("Error occurred when attempting to joinSession ", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.log("A rollback error occurred:", rollbackError);
+      }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async leaveSession({ sessionId, playerId }) {
     const client = await this.pool.connect();
     const sessionUpdate = {
       text: "UPDATE Sessions set number_of_players = number_of_players-1 where id=$1",
-      values: [sessionId]
+      values: [sessionId],
     };
     const sessionMembersRemove = {
       text: "DELETE FROM session_members WHERE player_id = $1 AND session_id = $2",
@@ -360,9 +612,9 @@ class db {
     };
 
     const sessionMemberCheck = {
-      text: "SELECT player_id FROM session_members WHERE session_id = $1 AND player_id = $2",
+      text: "SELECT player_id, status FROM session_members WHERE session_id = $1 AND player_id = $2",
       values: [sessionId, playerId],
-    }
+    };
 
     try {
       client.query("BEGIN");
@@ -370,10 +622,12 @@ class db {
       if (result.rows.length <= 0) {
         throw new ForbiddenAction("You are not a Member!");
       }
-      const result1 = await client.query(sessionUpdate);
+      let player = result.rows[0];
+      if (player.status === "Confirmed") {
+        const result1 = await client.query(sessionUpdate);
+      }
       const result2 = await client.query(sessionMembersRemove);
       await client.query("COMMIT");
-
     } catch (error) {
       console.log("Unable to leaveSession ", error);
       if (error.name === "ForbiddenAction") {
@@ -390,11 +644,11 @@ class db {
     }
   }
 
-  async deleteSession({sessionId, playerId}) {
+  async deleteSession({ sessionId, playerId }) {
     const client = await this.pool.connect();
     const sessionUpdate = {
       text: "DELETE FROM Sessions WHERE id=$1",
-      values: [sessionId]
+      values: [sessionId],
     };
     const sessionMembersRemove = {
       text: "DELETE FROM session_members WHERE session_id = $1",
@@ -404,7 +658,7 @@ class db {
     const sessionMemberCheck = {
       text: "SELECT player_id FROM session_members WHERE session_id = $1",
       values: [sessionId],
-    }
+    };
 
     try {
       client.query("BEGIN");
@@ -413,12 +667,11 @@ class db {
         throw new ForbiddenAction("There are other players!");
       }
       if (Number(result.rows[0].player_id) !== Number(playerId)) {
-        throw new ForbiddenAction("You are not a member!")
+        throw new ForbiddenAction("You are not a member!");
       }
-      const result2 = await client.query(sessionMembersRemove);
-      const result1 = await client.query(sessionUpdate);
+      await client.query(sessionMembersRemove);
+      await client.query(sessionUpdate);
       await client.query("COMMIT");
-
     } catch (error) {
       console.log("Error occurred when attempting to deleteSession ", error);
 
@@ -430,6 +683,33 @@ class db {
       } catch (rollbackError) {
         console.log("A rollback error occurred:", rollbackError);
       }
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  // find sessions for a pitch for specified date
+  async findSessionByPitchIdForSpecifiedDates(pitchId, startDate, endDate) {
+    // inclusive of start date and endDate
+    const querySessions = {
+      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND DATE(date) >= $2 AND DATE(date) <= $3",
+      values: [pitchId, startDate, endDate],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound(
+          "No results found for supplied pitchId and specified dates"
+        );
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
       throw new DatabaseError("Oops there seems to be some database error");
     } finally {
       client.release();
@@ -458,45 +738,20 @@ class db {
       client.release();
     }
   }
-  // find sessions for a pitch for specified date
-  async findSessionByPitchIdForSpecifiedDates(pitchId, startDate, endDate) {
-    // inclusive of start date and endDate
-    const querySessions = {
-      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND DATE(date) >= $2 AND DATE(date) <= $3",
-      values: [pitchId,startDate, endDate],
-    };
-    const client = await this.pool.connect();
-    try {
-      const results = await client.query(querySessions);
-      if (results.rows.length === 0) {
-        throw new ResultsNotFound("No results found for supplied pitchId and specified dates");
-      }
-      return results.rows;
-    } catch (error) {
-      if (error.name === "ResultsNotFound") {
-        throw error;
-      }
-      console.log("Unable to query Sessions ", error);
-      throw new DatabaseError("Oops there seems to be some database error");
-    } finally {
-      client.release();
-    }
-  }
-
 
   async findSessionBySessionId(sessionId) {
-    const querySessions = {
-      text: "SELECT * FROM Sessions WHERE id = $1",
+    const joinedQuery = {
+      text: "SELECT Sessions.id as id, pitch_id, pitch.name as pitch_name, city ,Sessions.name as name, number_of_players, date, start_time, end_time, price, capacity FROM Sessions INNER JOIN pitch on pitch.id = Sessions.pitch_id WHERE Sessions.id = $1",
       values: [sessionId],
     };
 
     const querySessionMembers = {
-      text: "SELECT player_id FROM session_members WHERE session_id = $1",
+      text: "SELECT player_id, status FROM session_members WHERE session_id = $1",
       values: [sessionId],
     };
     const client = await this.pool.connect();
     try {
-      const results = await client.query(querySessions);
+      const results = await client.query(joinedQuery);
       if (results.rows.length === 0) {
         throw new ResultsNotFound("No results found for supplied pitchId");
       }
@@ -518,8 +773,9 @@ class db {
 
   async findSessionByPitchIdAndDate(sessionId, date = new Date()) {
     const query = {
-      text: "SELECT * FROM Sessions WHERE pitch_id = $1 AND date_part('year',  date) = $2" +
-          "  AND date_part('month', date) = $3 AND  date_part('day', date) = $4",
+      text:
+        "SELECT * FROM Sessions WHERE pitch_id = $1 AND date_part('year',  date) = $2" +
+        "  AND date_part('month', date) = $3 AND  date_part('day', date) = $4",
       values: [
         sessionId,
         date.getFullYear(),
@@ -533,9 +789,7 @@ class db {
       const results = await client.query(query);
       if (results.rows.length === 0) {
         // this could also mean there just were no sessions for that date so dont throw
-        return []
-        //throw new ResultsNotFound("No results found for supplied pitchId");
-
+        return [];
       }
       return results.rows;
     } catch (error) {
@@ -548,8 +802,8 @@ class db {
       client.release();
     }
   }
-  async findSessionByPitchIdByTwoDays(sessionId, date = new Date()) {
 
+  async findSessionByPitchIdByTwoDays(sessionId, date = new Date()) {
     let tomorrow = new Date(date);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -564,7 +818,10 @@ class db {
       }
 
       try {
-        tomorrowsEvents = await this.findSessionByPitchIdAndDate(sessionId, tomorrow);
+        tomorrowsEvents = await this.findSessionByPitchIdAndDate(
+          sessionId,
+          tomorrow
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           tomorrowsEvents = [];
@@ -574,7 +831,10 @@ class db {
       try {
         let thirdDay = new Date(date);
         thirdDay.setDate(thirdDay.getDate() + 2);
-        thirdDayEvents = await this.findSessionByPitchIdAndDate(sessionId, thirdDay);
+        thirdDayEvents = await this.findSessionByPitchIdAndDate(
+          sessionId,
+          thirdDay
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           thirdDayEvents = [];
@@ -584,7 +844,10 @@ class db {
       try {
         let fourthDay = new Date(date);
         fourthDay.setDate(fourthDay.getDate() + 3);
-        forthDayEvents = await this.findSessionByPitchIdAndDate(sessionId, fourthDay);
+        forthDayEvents = await this.findSessionByPitchIdAndDate(
+          sessionId,
+          fourthDay
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           forthDayEvents = [];
@@ -603,10 +866,7 @@ class db {
   async findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeek) {
     const query = {
       text: "SELECT * FROM openinghours WHERE pitch_id = $1 AND dayofweek = $2",
-      values: [
-        pitchId,
-        dayOfWeek
-      ],
+      values: [pitchId, dayOfWeek],
     };
 
     const client = await this.pool.connect();
@@ -614,7 +874,7 @@ class db {
       const results = await client.query(query);
       if (results.rows.length === 0) {
         // this could also mean there just were no sessions for that date so dont throw
-        return []
+        return [];
       }
       return results.rows;
     } catch (error) {
@@ -626,11 +886,16 @@ class db {
   }
 
   async findOpeningHoursByPitchIdForDays(pitchId, dayOfWeeks) {
-
     try {
-      let todayOpeningHours, tomorrowsOpeningHours, thirdDayOpeningHours, forthDayOpeningHours;
+      let todayOpeningHours,
+        tomorrowsOpeningHours,
+        thirdDayOpeningHours,
+        forthDayOpeningHours;
       try {
-        todayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[0]);
+        todayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(
+          pitchId,
+          dayOfWeeks[0]
+        );
       } catch (todayError) {
         if (todayError.name === "ResultsNotFound") {
           todayOpeningHours = [];
@@ -638,7 +903,10 @@ class db {
       }
 
       try {
-        tomorrowsOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[1]);
+        tomorrowsOpeningHours = await this.findOpeningHoursByPitchIdAndDay(
+          pitchId,
+          dayOfWeeks[1]
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           tomorrowsOpeningHours = [];
@@ -646,7 +914,10 @@ class db {
       }
 
       try {
-        thirdDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[2]);
+        thirdDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(
+          pitchId,
+          dayOfWeeks[2]
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           thirdDayOpeningHours = [];
@@ -654,13 +925,21 @@ class db {
       }
 
       try {
-        forthDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(pitchId, dayOfWeeks[3]);
+        forthDayOpeningHours = await this.findOpeningHoursByPitchIdAndDay(
+          pitchId,
+          dayOfWeeks[3]
+        );
       } catch (tomorrowError) {
         if (tomorrowError.name === "ResultsNotFound") {
           forthDayOpeningHours = [];
         }
       }
-      return [todayOpeningHours, tomorrowsOpeningHours, thirdDayOpeningHours, forthDayOpeningHours];
+      return [
+        todayOpeningHours,
+        tomorrowsOpeningHours,
+        thirdDayOpeningHours,
+        forthDayOpeningHours,
+      ];
     } catch (error) {
       console.log("Unable to query Sessions ", error);
       throw new DatabaseError("Oops there seems to be some database error");
@@ -669,170 +948,201 @@ class db {
 
   // find all pitches with address and description and id
   async findPitches() {
-  const querySessions = {
-    text: "SELECT * FROM pitch ",
-  };
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(querySessions);
-    if (results.rows.length === 0) {
-      // if no pitch is in the database it means there are no pitches to show
-      console.log("no pitches to show")
+    const querySessions = {
+      text: "SELECT * FROM pitch ",
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        // if no pitch is in the database it means there are no pitches to show
+        console.log("no pitches to show");
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
     }
-    return results.rows;
-  } catch (error) {
-    if (error.name === "ResultsNotFound") {
-      throw error;
-    }
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
   }
-}
 
-async findPitchesWithImages() {
-     const queryPitches = {
-       text: "SELECT distinct on (pitch.id) pitch.id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id  WHERE pictures.image_type = $1 ORDER BY pitch.id, pictures.created_at DESC",
-       values: [
-         "PITCH_IMAGE"
-       ],
-     }
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(queryPitches);
-    return results.rows;
-  } catch (error) {
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
+  async findPitchesForHost(hostId) {
+    const queryPitches = {
+      text: "SELECT distinct on (pitch.id) pitch.id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id  WHERE pictures.image_type = $1 AND pitch.host_id = $2 ORDER BY pitch.id",
+      values: ["PITCH_IMAGE", hostId],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(queryPitches);
+      return results.rows;
+    } catch (error) {
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
   }
-}
+
+  async findPitchesWithImages() {
+    const queryPitches = {
+      text: "SELECT distinct on (pitch.id) pitch.id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id  WHERE pictures.image_type = $1 ORDER BY pitch.id, pictures.created_at DESC",
+      values: ["PITCH_IMAGE"],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(queryPitches);
+      return results.rows;
+    } catch (error) {
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
 
   async findPitchesById(pitchId) {
+    const querySessions = {
+      text: "SELECT pitch.id, host_id, name, description, capacity, price, type, city, country, latitude, longitude, image_url, image_id  FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id WHERE pitch.id = $1 AND pictures.image_type = $2",
+      values: [pitchId, "PITCH_IMAGE"],
+    };
 
-  const querySessions = {
-    text: "SELECT * FROM pitch INNER JOIN pictures on pictures.image_id = pitch.id WHERE pitch.id = $1 AND pictures.image_type = $2",
-    values: [
-      pitchId,
-      "PITCH_IMAGE"
-    ],
-  };
-
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(querySessions);
-    if (results.rows.length === 0) {
-      // if no pitch is in the database it means there are no pitches to show
-      console.log("no pitches to show")
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound();
+      }
+      return results.rows[0];
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
     }
-    return results.rows[0];
-  } catch (error) {
-    if (error.name === "ResultsNotFound") {
+  }
+
+  async findOpeningHoursForPitch(pitchId) {
+    const querySessions = {
+      text: "SELECT id, dayofweek, enabled, start_time, end_time FROM openinghours WHERE pitch_id = $1",
+      values: [pitchId],
+    };
+
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessions);
+      return results.rows;
+    } catch (error) {
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
+    }
+  }
+
+  async findPitchData(pitchId) {
+    try {
+      const pitchData = await this.findPitchesById(pitchId);
+      pitchData.openingHours = await this.findOpeningHoursForPitch(pitchId);
+      return pitchData;
+    } catch (error) {
+      console.error("PitchData not found", error);
       throw error;
     }
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
-  }
   }
 
   // find pitch that is available the day of the week
   async findPitchByDayOfWeek(pitchId, dayofweek) {
-  const query = {
-    text: "SELECT distinct on (pitch_id) pitch_id, price, capacity ,address, name ,description, image_url as src FROM pitch INNER JOIN openinghours on openinghours.pitch_id = pitch.id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
-    values: [
-      pitchId,
-      dayofweek,
-      "PITCH_IMAGE"
-    ],
-  };
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(query);
-    console.log(results)
-    if (results.rows.length === 0) {
-      // dont throw. just means the pitch is not open that day of week
+    const query = {
+      text: "SELECT distinct on (pitch_id) pitch_id, price, capacity ,address, name, latitude, longitude ,description, image_url as src FROM pitch INNER JOIN openinghours on openinghours.pitch_id = pitch.id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE openinghours.pitch_id = $1 AND dayofweek =$2 AND image_type=$3 ORDER BY pitch_id, pictures.created_at DESC",
+      values: [pitchId, dayofweek, "PITCH_IMAGE"],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        // dont throw. just means the pitch is not open that day of week
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
     }
-    return results.rows;
-  } catch (error) {
-    if (error.name === "ResultsNotFound") {
-      throw error;
-    }
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
   }
-}
 
   // find pitches
   async findPitchesByDayOfWeek(dayofweek) {
-  const query = {
-    text: "SELECT distinct on (pitch_id) pitch_id, name, price, capacity ,address, description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
-    values: [
-      dayofweek,
-      "PITCH_IMAGE"
-    ],
-  };
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(query);
-    if (results.rows.length === 0) {
-      // it means it is just empty - no open pitches were found for that day of the week
+    const query = {
+      text: "SELECT distinct on (pitch_id) pitch_id, name, price, capacity ,address, latitude, longitude ,description, image_url as src   FROM openinghours INNER JOIN pitch on pitch.id = openinghours.pitch_id INNER JOIN pictures on pictures.image_id = pitch.id  WHERE  dayofweek =$1 AND image_type=$2 ORDER BY pitch_id, pictures.created_at DESC",
+      values: [dayofweek, "PITCH_IMAGE"],
+    };
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(query);
+      if (results.rows.length === 0) {
+        // it means it is just empty - no open pitches were found for that day of the week
+      }
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
     }
-    return results.rows;
-  } catch (error) {
-    if (error.name === "ResultsNotFound") {
-      throw error;
-    }
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
   }
-}
 
   async findAllSessionPlayers(sessionId) {
-
-  const querySessionMembers = {
-    text: "SELECT player_id FROM session_members WHERE session_id = $1",
-    values: [sessionId],
-  };
-
-  const client = await this.pool.connect();
-  try {
-    const results = await client.query(querySessionMembers);
-    if (results.rows.length === 0) {
-      throw new ResultsNotFound("No results found for supplied pitchId");
-    }
-
-    let playerIds = results.rows.map(value => {
-      return value.player_id;
-    });
-
-    const queryPlayers= {
-      text: "SELECT id, first_name FROM players WHERE id = ANY($1::INT[])",
-      values: [playerIds],
+    const querySessionMembers = {
+      text: "SELECT player_id as id, status, first_name FROM session_members INNER JOIN players on session_members.player_id = players.id WHERE session_id = $1",
+      values: [sessionId],
     };
 
-    const sessionMembers = await client.query(queryPlayers);
+    const client = await this.pool.connect();
+    try {
+      const results = await client.query(querySessionMembers);
+      if (results.rows.length === 0) {
+        throw new ResultsNotFound("No results found for supplied pitchId");
+      }
 
-    return sessionMembers.rows;
-  } catch (error) {
-    if (error.name === "ResultsNotFound") {
-      throw error;
+      // let playerIds = results.rows.map(value => {
+      //   return value.player_id;
+      // });
+      //
+      // const queryPlayers= {
+      //   text: "SELECT id, first_name FROM players WHERE id = ANY($1::INT[])",
+      //   values: [playerIds],
+      // };
+      //
+      // const sessionMembers = await client.query(queryPlayers);
+
+      // return sessionMembers.rows;
+      return results.rows;
+    } catch (error) {
+      if (error.name === "ResultsNotFound") {
+        throw error;
+      }
+      console.log("Unable to query Sessions ", error);
+      throw new DatabaseError("Oops there seems to be some database error");
+    } finally {
+      client.release();
     }
-    console.log("Unable to query Sessions ", error);
-    throw new DatabaseError("Oops there seems to be some database error");
-  } finally {
-    client.release();
   }
-}
 
-  async notify({type, playerId, entityId}) {
+  async notify({ type, playerId, entityId }) {
     const client = await this.pool.connect();
     const notificationInsert = {
       text: "INSERT INTO Notifications (type, playerid, entityid) values($1, $2, $3) RETURNING id",
@@ -858,14 +1168,13 @@ async findPitchesWithImages() {
     }
   }
 
-  async getNotification({playerId}) {
+  async getNotification({ playerId }) {
     const notificationFetch = {
       text: "Select * from Notifications WHERE playerId = $1 AND seen = false ORDER BY updated_at DESC LIMIT 10",
       values: [playerId],
     };
     const client = await this.pool.connect();
     try {
-
       const results = await client.query(notificationFetch);
       return results.rows;
     } catch (error) {
@@ -876,21 +1185,22 @@ async findPitchesWithImages() {
     }
   }
 
-  async updateSingleNotification({notificationId}) {
-
+  async updateSingleNotification({ notificationId }) {
     const client = await this.pool.connect();
     const updateNotification = {
       text: "UPDATE Notifications SET seen=TRUE WHERE id=$1",
-      values: [notificationId]
+      values: [notificationId],
     };
 
     try {
       client.query("BEGIN");
       let result = await client.query(updateNotification);
       await client.query("COMMIT");
-
     } catch (error) {
-      console.log("Error occurred when attempting to update notification ", error);
+      console.log(
+        "Error occurred when attempting to update notification ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -902,12 +1212,11 @@ async findPitchesWithImages() {
     }
   }
 
-  async updateMultipleNotification({notifications}) {
-
+  async updateMultipleNotification({ notifications }) {
     const client = await this.pool.connect();
     const updateNotification = {
       text: "UPDATE Notifications SET seen=TRUE WHERE id = ANY ($1)",
-      values: [notifications]
+      values: [notifications],
     };
 
     try {
@@ -915,7 +1224,10 @@ async findPitchesWithImages() {
       await client.query(updateNotification);
       await client.query("COMMIT");
     } catch (error) {
-      console.log("Error occurred when attempting to update notification ", error);
+      console.log(
+        "Error occurred when attempting to update notification ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -931,7 +1243,7 @@ async findPitchesWithImages() {
   async addRefreshToken(values) {
     const client = await this.pool.connect();
     const addRefreshTokenQuery = {
-      text: 'INSERT INTO Tokens (refreshToken, accessToken, uid) values($1, $2, $3) RETURNING id',
+      text: "INSERT INTO Tokens (refreshToken, accessToken, uid) values($1, $2, $3) RETURNING id",
       values: [...values],
       rowMode: "array",
     };
@@ -956,22 +1268,17 @@ async findPitchesWithImages() {
     }
   }
 
-
   async findRefreshToken(refreshToken) {
-
     const querySessions = {
       text: "SELECT * FROM tokens WHERE refreshToken = $1",
-      values: [
-        refreshToken
-      ],
+      values: [refreshToken],
     };
 
     const client = await this.pool.connect();
     try {
       const results = await client.query(querySessions);
       if (results.rows.length === 0) {
-
-        console.trace("The refresh token doesnt exist in the database")
+        console.trace("The refresh token doesnt exist in the database");
       }
       return results.rows;
     } catch (error) {
@@ -985,22 +1292,23 @@ async findPitchesWithImages() {
     }
   }
 
-  async updateRefreshToken(oldRefreshToken, newRefreshToken, newaccessToken ) {
-
+  async updateRefreshToken(oldRefreshToken, newRefreshToken, newaccessToken) {
     const client = await this.pool.connect();
     const updateRefreshToken = {
       text: "UPDATE Tokens SET refreshToken=$1 , accessToken= $2 WHERE refreshToken=$3",
-      values: [newRefreshToken, newaccessToken, oldRefreshToken]
+      values: [newRefreshToken, newaccessToken, oldRefreshToken],
     };
 
     try {
       client.query("BEGIN");
       let result = await client.query(updateRefreshToken);
       await client.query("COMMIT");
-      return result
-
+      return result;
     } catch (error) {
-      console.log("Error occurred when attempting to update refreshToken ", error);
+      console.log(
+        "Error occurred when attempting to update refreshToken ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -1013,13 +1321,11 @@ async findPitchesWithImages() {
   }
 
   // delete refresh tokens for user uid
-
   async deleteRefreshTokens(uid) {
-
     const client = await this.pool.connect();
     const updateRefreshToken = {
       text: "DELETE FROM Tokens  WHERE uid=$1",
-      values: [uid]
+      values: [uid],
     };
 
     try {
@@ -1027,10 +1333,12 @@ async findPitchesWithImages() {
       let result = await client.query(updateRefreshToken);
 
       await client.query("COMMIT");
-      return result
-
+      return result;
     } catch (error) {
-      console.log("Error occurred when attempting to update refreshToken ", error);
+      console.log(
+        "Error occurred when attempting to update refreshToken ",
+        error
+      );
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -1041,9 +1349,6 @@ async findPitchesWithImages() {
       client.release();
     }
   }
-
-
-
 }
 
 const database = new db(config.database);
