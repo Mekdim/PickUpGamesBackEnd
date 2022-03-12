@@ -5,10 +5,11 @@ const database = require("../db/db");
 const {
   getOpeningHours,
   buildSpecialOpeningHours,
+  getOpeningHoursForPitch,
 } = require("../service/openingHours");
 const { getDate } = require("../util/time");
 let authenticateToken = require("../Auth/authenticate");
-const assert = require('assert');
+const assert = require("assert");
 
 function confirmValidityOfSessionTimes(currentSessionData, startTime, endTime) {
   for (let x = 0; x < currentSessionData.length; x++) {
@@ -313,7 +314,17 @@ router.get("/:pitchId/:date/openingHours", async (req, res, next) => {
     const results = await getOpeningHours({
       pitchId: req.params.pitchId,
       date: new Date(req.params.date),
+      database,
     });
+    res.status(200).json(results);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:pitchId/openingHours", async (req, res, next) => {
+  try {
+    const results = await getOpeningHoursForPitch(req.params.pitchId, database);
     res.status(200).json(results);
   } catch (err) {
     next(err);
@@ -361,13 +372,12 @@ router.get("/:pitchId/sessions", async function (req, res, next) {
 });
 
 // show events for pitches
-
-router.get("/events", async function (req, res, next) {
+router.get("/:pitchId/events", async function (req, res, next) {
   try {
     assert(req.query != null);
     assert(req.query.start != null);
     assert(req.query.end != null);
-    assert(req.body.pitchId != null);
+    assert(req.params.pitchId != null);
     // start date example format 2022-01-05T00:00:00-05
     let startDate = new moment(req.query.start).toDate();
     let endDate = new moment(req.query.end).toDate();
@@ -385,16 +395,29 @@ router.get("/events", async function (req, res, next) {
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
     const results = await database.findSessionByPitchIdForSpecifiedDates(
-      req.body.pitchId,
+      req.params.pitchId,
       formattedStartDate,
       formattedEndDate
     );
     let modifiedResults = results.map((item) => {
+      let st =
+        new moment(item.date).format("YYYY-MM-DD") + "T" + item.start_time;
+      let et = new moment(item.date).format("YYYY-MM-DD") + "T" + item.end_time;
+      let isEditable = new moment(et).isSameOrAfter(new moment());
+
       return {
-        start: item.start_time,
+        start: st,
         title: item.name,
-        end: item.end_time,
-        date: item.date,
+        end: et,
+        extendedProps: {
+          sessionId: item.id,
+          name: item.name,
+          players: item.number_of_players,
+          date: item.date,
+          startTime: item.start_time,
+          endTime: item.end_time,
+        },
+        editable: isEditable,
       };
     });
     res.status(200).json(modifiedResults);
