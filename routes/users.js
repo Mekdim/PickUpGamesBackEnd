@@ -11,6 +11,21 @@ router.get('/', async function(req, res, next) {
   const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [1])
   res.send(rows);
 });
+router.post('/checkEmailExists', async function(req, res, next) {
+  try{
+      const { rows } = await pool.query('SELECT * FROM players WHERE email = $1', [req.body.email])
+      let emailExists = true
+      if (rows ==""){
+        emailExists = false
+        res.status(200).json({"emailExists":emailExists});
+      }
+      else{
+          res.status(200).json({"emailExists":emailExists});
+      }
+  }catch(err){
+    next(err)
+  }
+});
 router.get('/getUserIds', authenticateToken, (req, res, next)=>{
   
   res.status(201).json(req.user)
@@ -61,7 +76,7 @@ router.post('/isUserEligibleForFreeGame', async function(req, res, next) {
       console.log(isUserEligible)
       if (!isUserEligible.length || isUserEligible.length < 1){
          return res.status(400).json({
-          error:"User is not eligble for free games "
+          error:"User is not eligble for free games"
         })
       }
       res.status(200).json({
