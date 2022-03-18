@@ -51,13 +51,13 @@ class db {
 
   async checkEmail(email) {
     const client = await this.pool.connect();
-    const checkEmailQuery = {
+    const addProfileQuery = {
       text: "SELECT * FROM players WHERE email = $1",
       values: [email],
     };
 
     try {
-      return await client.query(checkEmailQuery);
+      return await client.query(addProfileQuery);
     } catch (error) {
       console.log("Error occurred when attempting to check email ", error);
       throw new DatabaseError("Oops there seems to be some database error");
